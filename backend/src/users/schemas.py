@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class User(BaseModel):
     registration_date: date
-    rating = Field(ge=0, le=5)
+    rating: float = Field(ge=0, le=5)
 
 
 class UserFromDB(User):
@@ -13,5 +13,3 @@ class UserFromDB(User):
 
     class Config:
         from_attributes = True
-
-
