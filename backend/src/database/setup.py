@@ -10,7 +10,7 @@ class Base(DeclarativeBase):
 
 
 async_engine = create_async_engine(  
-            url=db_config.host
+            url=f"postgresql+asyncpg://{db_config.user}:{db_config.password}@{db_config.host}:{db_config.port}/{db_config.db_name}"
         )
         
 async_session_maker: type[AsyncSession] = sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)
