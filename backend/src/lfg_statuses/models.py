@@ -2,7 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import ForeignKey
 
 from ..database.setup import Base
-from ..database.annotated_types import intpk
+from .database.types.annotated_types import intpk
 
 
 class LFGStatus(Base):
