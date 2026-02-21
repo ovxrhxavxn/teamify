@@ -2,7 +2,7 @@ from typing import Protocol
 
 from sqlalchemy import select, insert
 
-from ..database.types import EntityId
+from ..database.types.aliases import EntityId
 from ..database.setup import async_session_maker
 from ..users.models import User
 
@@ -16,7 +16,6 @@ class AbstractUserRepository[Entity](Protocol):
         ...
 
 
-
 class UserRepository:
 
     model = User
@@ -26,7 +25,7 @@ class UserRepository:
             query = select(self.model).where(self.model.id == id)
             result = await session.execute(query)
 
-            return result.one_or_none()
+            return result.scalar_one_or_none()
         
 
     async def add(self, schema: dict): 
@@ -35,4 +34,4 @@ class UserRepository:
             result = await session.execute(stmt)
             await session.commit()
 
-            return result.one_or_none()
+            return result.scalar_one_or_none()
