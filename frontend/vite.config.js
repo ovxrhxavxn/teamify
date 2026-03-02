@@ -8,6 +8,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true, // или '0.0.0.0'
+    // Вы также можете указать порт, если нужно
+    // port: 5173
+
+    allowedHosts: ['teamify.pro'],
+  },
   plugins: [vue(), vueDevTools(), vueJsx(), tailwindcss()],
   resolve: {
     alias: {
