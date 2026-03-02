@@ -1,15 +1,10 @@
-from datetime import date
-
 from pydantic import BaseModel
+from ..profiles.schemas import UserProfileResponse
 
 
-class LFGStatus(BaseModel):
-    user_id: int
+class LFGStatusUpdate(BaseModel):
     is_active: bool
 
-
-class LFGStatusFromDB(LFGStatus):
-    id: int
-
-    class Config:
-        from_attributes = True
+# Схема для ответа со списком активных игроков
+class ActivePlayer(UserProfileResponse):
+    pass
