@@ -1,5 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl, Field, field_validator
+from typing import Optional, Union
 
+# --- Схемы для работы с БД  ---
 
 class GameRole(BaseModel):
     name: str
@@ -7,7 +9,6 @@ class GameRole(BaseModel):
 
 class GameRoleFromDB(GameRole):
     id: int
-
     class Config:
         from_attributes = True
 
@@ -19,23 +20,104 @@ class FaceitData(BaseModel):
     elo: int
     lvl: int
     k_d_ratio: float
-    avg_kills: float
-
+    avg_damage_per_round: float
+    matches: int
+    win_rate_percentage: float
+    average_headshots_percentage: int
+    avatar: Optional[str] = None
+    
 
 class FaceitDataFromDB(FaceitData):
     id: int
-
     class Config:
         from_attributes = True
 
-
 class FaceitAuthData(BaseModel):
     user_id: int
-    refresh_token: str
+    encrypted_refresh_token: str
 
 
 class FaceitAuthDataFromDB(FaceitAuthData):
     id: int
-
     class Config:
         from_attributes = True
+
+# --- Схемы для парсинга ответов от API Faceit ---
+
+class FaceitTokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    id_token: str
+    token_type: str
+    expires_in: int
+
+
+class FaceitUserInfoResponse(BaseModel):
+    guid: str
+    nickname: str
+    given_name: str
+    family_name: str
+    picture: Union[HttpUrl, str, None] = None
+    locale: str
+
+    # ИСПРАВЛЕНИЕ: Валидатор должен быть для поля 'picture', а не 'avatar'
+    @field_validator("picture", mode="before")
+    @classmethod
+    def validate_picture(cls, v):
+        # Если значение - пустая строка, заменяем его на None
+        if v == "":
+            return None
+        return v
+
+
+class FaceitCS2Details(BaseModel):
+    skill_level: int
+    faceit_elo: int
+
+# Эта схема описывает объект games
+class FaceitGames(BaseModel):
+    # Поле cs2 может отсутствовать, если игрок ни разу не играл, делаем его опциональным
+    cs2: Optional[FaceitCS2Details] = None
+
+# Это основная схема для всего ответа
+class FaceitPlayerDetailsResponse(BaseModel):
+    player_id: str
+    nickname: str
+    games: FaceitGames
+    avatar: Union[HttpUrl, str, None] = None
+
+    @field_validator("avatar", mode="before")
+    @classmethod
+    def validate_avatar(cls, v):
+        # Если значение - пустая строка, заменяем его на None
+        if v == "":
+            return None
+        return v
+
+
+class FaceitPlayerStatsResponse(BaseModel):
+    """
+    Схема для парсинга объекта 'lifetime' из ответа Faceit Data API.
+    Все поля сделаны опциональными, чтобы код не падал, если у игрока нет статистики.
+    Используются псевдонимы (alias) для соответствия ключам из JSON.
+    """
+    # Используем alias для ключа "Average K/D Ratio" и делаем поле опциональным
+    k_d_ratio: Optional[str] = Field(None, alias="Average K/D Ratio")
+    
+    # Используем ADR вместо отсутствующего average_kills
+    avg_damage_per_round: Optional[str] = Field(None, alias="ADR")
+
+    win_rate_percentage: Optional[str] = Field(None, alias="Win Rate %")
+    matches: Optional[str] = Field(None, alias="Matches")
+    average_headshots_percentage: Optional[str] = Field(None, alias="Average Headshots %")
+
+
+# --- Схемы для нашего API ---
+
+class AppTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class FaceitCallbackPayload(BaseModel):
+    code: str
+    code_verifier: str
