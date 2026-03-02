@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import ForeignKey
 
@@ -5,18 +7,8 @@ from ..database.setup import Base
 from ..database.types.annotated_types import intpk
 
 
-class GameRole(Base):
-
-    __tablename__ = "game_roles"
-
-    id: Mapped[intpk]
-    name: Mapped[str] = mapped_column(unique=True)
-
-
 class FaceitData(Base):
-
     __tablename__ = "faceit_data"
-
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     player_id: Mapped[str] = mapped_column(unique=True)
@@ -24,7 +16,11 @@ class FaceitData(Base):
     elo: Mapped[int] = mapped_column()
     lvl: Mapped[int] = mapped_column()
     k_d_ratio: Mapped[float] = mapped_column()
-    avg_kills: Mapped[float] = mapped_column()
+    avg_damage_per_round: Mapped[float] = mapped_column()
+    matches: Mapped[int] = mapped_column()
+    win_rate_percentage: Mapped[float] = mapped_column()
+    average_headshots_percentage: Mapped[int] = mapped_column()
+    avatar: Mapped[Optional[str]]
 
 
 class FaceitAuthData(Base):
@@ -33,4 +29,4 @@ class FaceitAuthData(Base):
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    refresh_token: Mapped[str] = mapped_column()
+    encrypted_refresh_token: Mapped[str] = mapped_column()
