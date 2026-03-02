@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update
 
 from ..database.types.aliases import EntityId
 from ..database.setup import async_session_maker
@@ -14,6 +14,10 @@ class AbstractUserRepository[Entity](Protocol):
 
     async def add(self, schema: dict) -> EntityId:
         ...
+
+    async def update_rating(self, user_id: int, new_rating: float) -> None:
+        ...
+
 
 
 class UserRepository:
@@ -34,4 +38,15 @@ class UserRepository:
             result = await session.execute(stmt)
             await session.commit()
 
-            return result.scalar_one_or_none()
+            return result.scalar_one()
+        
+
+    async def update_rating(self, user_id: int, new_rating: float):
+        async with async_session_maker() as session:
+            stmt = (
+                update(self.model)
+                .where(self.model.id == user_id)
+                .values(rating=new_rating)
+            )
+            await session.execute(stmt)
+            await session.commit()
