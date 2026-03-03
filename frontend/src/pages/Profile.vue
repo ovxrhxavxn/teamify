@@ -133,7 +133,7 @@ async function submitReview() {
   isSubmittingReview.value = true
   try {
     const token = localStorage.getItem('user_token')
-    await axios.post(
+    const response = await axios.post(
       `https://teamify.pro/api/reviews/${viewedProfile.value.profile.id}`,
       {
         content: newReviewContent.value,
@@ -141,6 +141,13 @@ async function submitReview() {
       },
       { headers: { Authorization: `Bearer ${token}` } },
     )
+
+    if (viewedProfile.value) {
+      viewedProfile.value.rating = response.data.new_average_rating
+      // 2. Увеличиваем счетчик отзывов
+      viewedProfile.value.total_reviews += 1
+    }
+
     reviews.value = []
     reviewsCurrentPage.value = 0
     hasMoreReviews.value = true
