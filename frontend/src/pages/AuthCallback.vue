@@ -2,14 +2,12 @@
 import { onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Spinner from '@/components/Spinner.vue'
-import axios from 'axios'
-// 1. Импортируем наше хранилище
+import api from '@/api'
 import { useUserStore } from '@/stores/user'
 
 onMounted(async () => {
   const route = useRoute()
   const router = useRouter()
-
   const userStore = useUserStore()
 
   const code = route.query.code
@@ -18,25 +16,22 @@ onMounted(async () => {
   if (code && codeVerifier) {
     try {
       localStorage.removeItem('pkce_code_verifier')
-      const response = await axios.post('https://teamify.pro/api/faceit/oauth2/callback', {
+
+      const response = await api.post('/faceit/oauth2/callback', {
         code: code,
         code_verifier: codeVerifier,
       })
 
-      const accessToken = response.data.access_token
-      localStorage.setItem('user_token', accessToken)
-
+      localStorage.setItem('user_token', response.data.access_token)
       await userStore.fetchUser()
-
       router.push('/profile')
     } catch (error) {
-      console.error('Ошибка авторизации:', error)
-
+      console.error('Auth error:', error)
       userStore.logout()
       router.push('/')
     }
   } else {
-    console.error('Код авторизации или verifier не найдены.')
+    console.error('Auth code or verifier not found.')
     router.push('/')
   }
 })

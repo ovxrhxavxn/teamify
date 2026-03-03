@@ -1,15 +1,13 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from '@/api'
 
 const PAGE_SIZE = 3
 
-// Функция для правильной сериализации параметров
 function serializeParams(params) {
   const searchParams = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined) continue
     if (Array.isArray(value)) {
-      // Каждый элемент массива добавляется как отдельный параметр с тем же ключом
-      // role_ids=1&role_ids=3 — именно так ожидает FastAPI
       value.forEach((item) => searchParams.append(key, item))
     } else {
       searchParams.append(key, value)
@@ -33,13 +31,10 @@ export const useLfgStore = defineStore('lfg', {
   actions: {
     async fetchMyStatus() {
       try {
-        const token = localStorage.getItem('user_token')
-        const response = await axios.get('https://teamify.pro/api/lfg/status', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
+        const response = await api.get('/lfg/status')
         this.isSearching = response.data.is_active
       } catch (error) {
-        console.error('Ошибка при получении своего LFG статуса:', error)
+        console.error('Error fetching LFG status:', error)
       }
     },
 
@@ -51,15 +46,8 @@ export const useLfgStore = defineStore('lfg', {
       this.currentFilters = filters
 
       try {
-        const token = localStorage.getItem('user_token')
-        const response = await axios.get('https://teamify.pro/api/lfg/active', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: {
-            limit: PAGE_SIZE,
-            offset: 0,
-            ...this.currentFilters,
-          },
-          // ← Ключевое исправление
+        const response = await api.get('/lfg/active', {
+          params: { limit: PAGE_SIZE, offset: 0, ...this.currentFilters },
           paramsSerializer: (params) => serializeParams(params).toString(),
         })
         this.activePlayers = response.data
@@ -68,7 +56,7 @@ export const useLfgStore = defineStore('lfg', {
           this.hasMorePlayers = false
         }
       } catch (error) {
-        console.error('Ошибка при загрузке LFG игроков:', error)
+        console.error('Error loading LFG players:', error)
       } finally {
         this.isLoading = false
       }
@@ -79,15 +67,12 @@ export const useLfgStore = defineStore('lfg', {
 
       this.isLoadingMore = true
       try {
-        const token = localStorage.getItem('user_token')
-        const response = await axios.get('https://teamify.pro/api/lfg/active', {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get('/lfg/active', {
           params: {
             limit: PAGE_SIZE,
             offset: this.currentPage * PAGE_SIZE,
             ...this.currentFilters,
           },
-          // ← Ключевое исправление
           paramsSerializer: (params) => serializeParams(params).toString(),
         })
 
@@ -99,7 +84,7 @@ export const useLfgStore = defineStore('lfg', {
           this.hasMorePlayers = false
         }
       } catch (error) {
-        console.error('Ошибка при подгрузке игроков:', error)
+        console.error('Error loading more players:', error)
       } finally {
         this.isLoadingMore = false
       }
@@ -109,11 +94,11 @@ export const useLfgStore = defineStore('lfg', {
       const token = localStorage.getItem('user_token')
       if (!token || this.socket) return
 
-      const socketUrl = `wss://teamify.pro/api/lfg/ws?token=${token}`
-      this.socket = new WebSocket(socketUrl)
+      const wsBase = import.meta.env.VITE_WS_BASE_URL || 'wss://teamify.pro/api'
+      this.socket = new WebSocket(`${wsBase}/lfg/ws?token=${token}`)
 
       this.socket.onopen = () => {
-        console.log('WebSocket-соединение установлено.')
+        console.log('WebSocket connected.')
       }
 
       this.socket.onmessage = (event) => {
@@ -123,8 +108,8 @@ export const useLfgStore = defineStore('lfg', {
           const userId = userProfile.profile.user_id
 
           if (message.is_active) {
-            const playerExists = this.activePlayers.some((p) => p.profile.user_id === userId)
-            if (!playerExists) {
+            const exists = this.activePlayers.some((p) => p.profile.user_id === userId)
+            if (!exists) {
               this.activePlayers.unshift(userProfile)
             }
           } else {
@@ -134,7 +119,7 @@ export const useLfgStore = defineStore('lfg', {
       }
 
       this.socket.onclose = () => {
-        console.log('WebSocket-соединение закрыто.')
+        console.log('WebSocket closed.')
         this.socket = null
       }
     },
@@ -148,14 +133,9 @@ export const useLfgStore = defineStore('lfg', {
     async toggleSearchStatus(newStatus) {
       this.isSearching = newStatus
       try {
-        const token = localStorage.getItem('user_token')
-        await axios.post(
-          'https://teamify.pro/api/lfg/status',
-          { is_active: newStatus },
-          { headers: { Authorization: `Bearer ${token}` } },
-        )
+        await api.post('/lfg/status', { is_active: newStatus })
       } catch (error) {
-        console.error('Ошибка при обновлении LFG статуса:', error)
+        console.error('Error toggling LFG status:', error)
         this.isSearching = !newStatus
       }
     },

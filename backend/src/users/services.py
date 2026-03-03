@@ -1,18 +1,16 @@
-from .repositories import AbstractUserRepository
-from .schemas import User, UserFromDB
+from .repositories import UserRepository
+from .schemas import UserFromDB, User as UserSchema
 
 
 class UserService:
+    def __init__(self, repo: UserRepository):
+        self._repo = repo
 
-    def __init__(self, repo: type[AbstractUserRepository[UserFromDB]]):
-        self._repo = repo()
+    async def add(self, schema: UserSchema) -> int:
+        return await self._repo.add(schema.model_dump(exclude_none=True))
 
-
-    async def add(self, schema: User):
-        user_id = await self._repo.add(schema.model_dump())
-        return user_id
-    
-
-    async def get(self, id: int):
-        user = await self._repo.get(id)
-        return UserFromDB.model_validate(user)
+    async def get(self, user_id: int) -> UserFromDB | None:
+        user = await self._repo.get(user_id)
+        if user:
+            return UserFromDB.model_validate(user)
+        return None
