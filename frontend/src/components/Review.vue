@@ -14,7 +14,9 @@ const formattedDate = computed(() => {
 </script>
 
 <template>
-  <div class="border border-black p-4 mb-4 bg-white hover:bg-gray-50 transition-colors">
+  <div
+    class="border border-black p-4 mb-4 bg-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
+  >
     <div class="flex justify-between items-start mb-3">
       <div class="flex items-center gap-3">
         <div

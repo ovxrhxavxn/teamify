@@ -6,6 +6,16 @@ import Header from '@/components/Header.vue'
 import RatingStars from '@/components/RatingStars.vue'
 import Review from '@/components/Review.vue'
 import Spinner from '@/components/Spinner.vue'
+import {
+  getLevelColorClass,
+  formatStat,
+  getKDColorClass,
+  getWinRateColorClass,
+  getHeadshotColorClass,
+  getADRColorClass,
+  getMatchesColorClass,
+} from '@/utils'
+
 import api from '@/api'
 
 const route = useRoute()
@@ -50,6 +60,10 @@ const targetUserId = computed(() => {
   if (userStore.profile) return userStore.profile.profile.user_id
   return null
 })
+
+const levelColor = computed(() =>
+  viewedProfile.value ? getLevelColorClass(viewedProfile.value.faceit_data.lvl) : '',
+)
 
 onMounted(async () => {
   try {
@@ -215,7 +229,9 @@ async function saveRoles() {
     <div class="flex flex-col md:flex-row gap-12">
       <!-- Sidebar -->
       <div class="w-full md:w-1/3">
-        <div class="border-2 border-black p-6 text-center sticky top-24">
+        <div
+          class="border-2 border-black p-6 text-center sticky top-24 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
+        >
           <div
             class="w-32 h-32 border-2 border-black bg-gray-200 mx-auto mb-6 flex items-center justify-center overflow-hidden"
           >
@@ -240,35 +256,47 @@ async function saveRoles() {
 
           <div class="grid grid-cols-2 gap-4 border-t-2 border-black pt-6 mb-6">
             <div class="text-center">
-              <div class="text-3xl font-black leading-none">
-                {{ viewedProfile.faceit_data.lvl }}
+              <div :class="levelColor" class="text-3xl font-black leading-none">
+                {{ formatStat(viewedProfile.faceit_data.lvl) }}
               </div>
               <div class="text-[10px] uppercase font-bold text-gray-500">Уровень Faceit</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-black leading-none">
-                {{ viewedProfile.faceit_data.elo }}
+                {{ formatStat(viewedProfile.faceit_data.elo) }}
               </div>
               <div class="text-[10px] uppercase font-bold text-gray-500">Очки ELO</div>
             </div>
           </div>
 
+          <!-- В сайдбаре: детальная статистика -->
           <div class="space-y-2 mb-6 text-left">
             <div class="flex justify-between items-center text-sm">
               <span class="font-bold text-gray-500">Соотношение K/D</span>
-              <span class="font-mono font-bold">
-                {{ viewedProfile.faceit_data.k_d_ratio }}
+              <span
+                :class="getKDColorClass(viewedProfile.faceit_data.k_d_ratio)"
+                class="font-mono font-bold"
+              >
+                {{ formatStat(viewedProfile.faceit_data.k_d_ratio) }}
               </span>
             </div>
             <div class="flex justify-between items-center text-sm">
               <span class="font-bold text-gray-500">Процент побед</span>
-              <span class="font-mono font-bold">
-                {{ viewedProfile.faceit_data.win_rate_percentage }}%
+              <span
+                :class="getWinRateColorClass(viewedProfile.faceit_data.win_rate_percentage)"
+                class="font-mono font-bold"
+              >
+                {{ formatStat(viewedProfile.faceit_data.win_rate_percentage, '%') }}
               </span>
             </div>
             <div class="flex justify-between items-center text-sm">
               <span class="font-bold text-gray-500">Матчи</span>
-              <span class="font-mono font-bold">{{ viewedProfile.faceit_data.matches }}</span>
+              <span
+                :class="getMatchesColorClass(viewedProfile.faceit_data.matches)"
+                class="font-mono font-bold"
+              >
+                {{ formatStat(viewedProfile.faceit_data.matches) }}
+              </span>
             </div>
           </div>
         </div>
@@ -293,21 +321,22 @@ async function saveRoles() {
             <textarea
               v-model="editableDescription"
               rows="5"
-              class="w-full p-2 border-2 border-black focus:outline-none"
+              class="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow resize-none"
+              placeholder="Расскажи о себе..."
             />
-            <div class="flex justify-end gap-4 mt-4">
+            <div class="flex justify-end gap-3 mt-4">
               <button
                 @click="cancelEditing"
-                class="px-4 py-2 text-sm font-bold uppercase border-2 border-gray-400"
+                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
                 Отмена
               </button>
               <button
                 @click="saveProfile"
                 :disabled="userStore.isSaving"
-                class="px-4 py-2 text-sm font-bold uppercase bg-black !text-white"
+                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ userStore.isSaving ? '...' : 'Сохранить' }}
+                {{ userStore.isSaving ? 'Сохранение...' : 'Сохранить' }}
               </button>
             </div>
           </div>
@@ -337,28 +366,31 @@ async function saveRoles() {
               <label
                 v-for="role in allRoles"
                 :key="role.id"
-                class="flex items-center gap-2 p-3 border-2 border-gray-200 cursor-pointer transition-all justify-center"
-                :class="{
-                  'border-black bg-black text-white shadow-md': selectedRoleIds.includes(role.id),
-                }"
+                class="flex items-center gap-2 p-3 border-2 cursor-pointer transition-all justify-center"
+                :class="
+                  selectedRoleIds.includes(role.id)
+                    ? 'border-black bg-black text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                    : 'border-gray-200 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] hover:border-black'
+                "
               >
                 <input type="checkbox" :value="role.id" v-model="selectedRoleIds" class="sr-only" />
                 <span class="font-bold uppercase text-sm">{{ role.name }}</span>
               </label>
             </div>
-            <div class="flex justify-end gap-4 mt-6">
+            <div class="flex justify-end gap-3 mt-6">
               <button
                 @click="cancelEditingRoles"
-                class="px-4 py-2 text-sm font-bold uppercase border-2 border-gray-400"
+                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
                 Отмена
               </button>
+
               <button
                 @click="saveRoles"
                 :disabled="userStore.isSaving"
-                class="px-4 py-2 text-sm font-bold uppercase bg-black !text-white"
+                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ userStore.isSaving ? '...' : 'Сохранить' }}
+                {{ userStore.isSaving ? 'Сохранение...' : 'Сохранить' }}
               </button>
             </div>
           </div>
@@ -384,20 +416,32 @@ async function saveRoles() {
             Основная статистика
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="border border-black p-4 bg-gray-50 flex items-center justify-between">
+            <div
+              class="border border-black p-4 bg-gray-50 flex items-center justify-between hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
+            >
               <div>
                 <div class="text-xs uppercase font-bold text-gray-500">headshot %</div>
-                <div class="text-2xl font-black">
-                  {{ viewedProfile.faceit_data.average_headshots_percentage }}%
+                <div
+                  :class="
+                    getHeadshotColorClass(viewedProfile.faceit_data.average_headshots_percentage)
+                  "
+                  class="text-2xl font-black"
+                >
+                  {{ formatStat(viewedProfile.faceit_data.average_headshots_percentage, '%') }}
                 </div>
               </div>
               <img src="/img/bullseye.svg" width="24" height="24" />
             </div>
-            <div class="border border-black p-4 bg-gray-50 flex items-center justify-between">
+            <div
+              class="border border-black p-4 bg-gray-50 flex items-center justify-between hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
+            >
               <div>
                 <div class="text-xs uppercase font-bold text-gray-500">AVG damage</div>
-                <div class="text-2xl font-black">
-                  {{ viewedProfile.faceit_data.avg_damage_per_round }}
+                <div
+                  :class="getADRColorClass(viewedProfile.faceit_data.avg_damage_per_round)"
+                  class="text-2xl font-black"
+                >
+                  {{ formatStat(viewedProfile.faceit_data.avg_damage_per_round) }}
                 </div>
               </div>
               <img src="/img/shield_check.svg" width="24" height="24" />
@@ -419,7 +463,8 @@ async function saveRoles() {
             <textarea
               v-model="newReviewContent"
               rows="3"
-              class="w-full p-2 border-2 border-black"
+              class="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow resize-none"
+              placeholder="Напиши отзыв..."
             />
             <div class="flex justify-between items-center mt-3">
               <div class="flex items-center gap-2">
@@ -444,9 +489,9 @@ async function saveRoles() {
               <button
                 @click="submitReview"
                 :disabled="isSubmittingReview"
-                class="px-4 py-2 text-sm font-bold uppercase bg-black !text-white"
+                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ isSubmittingReview ? '...' : 'Отправить' }}
+                {{ isSubmittingReview ? 'Отправка...' : 'Отправить' }}
               </button>
             </div>
           </div>
@@ -458,7 +503,7 @@ async function saveRoles() {
             <Review v-for="review in reviews" :key="review.id" :review="review" />
           </div>
           <div v-else class="text-center text-gray-500 italic">
-            Расскажи первым, как он слил тебе игру
+            {{ isOwnProfile ? 'Пока нет отзывов' : 'Расскажи первым, как он слил тебе игру' }}
           </div>
 
           <div v-if="isReviewsLoadingMore" class="flex justify-center py-4">

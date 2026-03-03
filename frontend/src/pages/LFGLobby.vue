@@ -79,14 +79,18 @@ onUnmounted(() => {
       <div class="flex flex-col lg:flex-row gap-8">
         <aside class="w-full lg:w-80 flex-shrink-0">
           <div class="sticky top-24 space-y-8">
-            <div class="bg-white p-4 border-2 border-black space-y-3">
+            <div
+              class="bg-white p-4 border-2 border-black space-y-3 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
+            >
               <div class="flex items-center justify-between">
                 <span class="font-black uppercase tracking-tight text-md">ПОИСК АКТИВЕН</span>
                 <a-switch :checked="lfgStore.isSearching" @change="lfgStore.toggleSearchStatus" />
               </div>
             </div>
 
-            <div class="bg-white p-6 border-2 border-black">
+            <div
+              class="bg-white p-6 border-2 border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
+            >
               <div class="flex items-center gap-2 mb-6 border-b-2 border-black pb-2">
                 <img src="/img/funnel.svg" height="22" width="22" />
                 <h3 class="font-black text-lg uppercase">Фильтры</h3>

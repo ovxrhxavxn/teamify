@@ -1,6 +1,6 @@
-<!-- frontend/src/components/RatingStars.vue -->
 <script setup>
 import { computed } from 'vue'
+import { getRatingColorClass } from '@/utils'
 
 const props = defineProps({
   rating: {
@@ -9,34 +9,31 @@ const props = defineProps({
   },
 })
 
+const hasRating = computed(() => props.rating > 0)
 const fullStars = computed(() => Math.round(props.rating))
-
-const ratingColorClass = computed(() => {
-  if (props.rating >= 4.0) return 'text-green-500'
-  if (props.rating >= 2.5) return 'text-yellow-500'
-  return 'text-red-500'
-})
+const ratingColorClass = computed(() => getRatingColorClass(props.rating))
 </script>
 
 <template>
   <div class="flex items-center gap-2">
-    <!-- Звезды -->
-    <div class="flex items-center gap-0.5 text-yellow-400">
-      <img
-        v-for="star in 5"
-        :key="star"
-        :src="star <= fullStars ? '/img/star-fill.svg' : '/img/star.svg'"
-        width="16"
-        height="16"
-      />
-    </div>
-
-    <span class="text-gray-400 font-medium text-sm">
-      (
-      <span :class="ratingColorClass" class="font-bold">
-        {{ rating.toFixed(1) }}
+    <template v-if="hasRating">
+      <div class="flex items-center gap-0.5 text-yellow-400">
+        <img
+          v-for="star in 5"
+          :key="star"
+          :src="star <= fullStars ? '/img/star-fill.svg' : '/img/star.svg'"
+          width="16"
+          height="16"
+        />
+      </div>
+      <span class="text-gray-400 font-medium text-sm">
+        (
+        <span :class="ratingColorClass" class="font-bold">
+          {{ rating.toFixed(1) }}
+        </span>
+        )
       </span>
-      )
-    </span>
+    </template>
+    <span v-else class="text-gray-400 font-medium text-sm">Нет оценок</span>
   </div>
 </template>

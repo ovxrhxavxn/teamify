@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import RatingStars from '@/components/RatingStars.vue'
+import { getLevelColorClass, formatStat, getKDColorClass } from '@/utils'
 
 const props = defineProps({
   profileData: {
@@ -12,8 +13,8 @@ const props = defineProps({
 const userId = computed(() => props.profileData.profile.user_id)
 const faceitData = computed(() => props.profileData.faceit_data)
 const rating = computed(() => props.profileData.rating)
-
 const roles = computed(() => props.profileData.profile.roles || [])
+const levelColor = computed(() => getLevelColorClass(faceitData.value.lvl))
 </script>
 
 <template>
@@ -23,17 +24,21 @@ const roles = computed(() => props.profileData.profile.roles || [])
   >
     <div class="bg-gray-50 border-b-2 border-black p-4 flex justify-between items-center h-20">
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div class="font-black text-2xl leading-none">{{ faceitData.lvl }}</div>
+        <div :class="levelColor" class="font-black text-xl leading-none">
+          {{ formatStat(faceitData.lvl) }}
+        </div>
         <div class="text-[10px] uppercase font-bold text-gray-500">LVL</div>
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div class="font-black text-2xl leading-none">{{ faceitData.elo }}</div>
+        <div class="font-black text-xl leading-none">{{ formatStat(faceitData.elo) }}</div>
         <div class="text-[10px] uppercase font-bold text-gray-500">ELO</div>
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div class="font-black text-2xl leading-none">{{ faceitData.k_d_ratio }}</div>
+        <div :class="getKDColorClass(faceitData.k_d_ratio)" class="font-black text-xl leading-none">
+          {{ formatStat(faceitData.k_d_ratio) }}
+        </div>
         <div class="text-[10px] uppercase font-bold text-gray-500">K/D</div>
       </div>
     </div>
@@ -50,7 +55,6 @@ const roles = computed(() => props.profileData.profile.roles || [])
       <div class="mb-3">
         <RatingStars :rating="rating" />
       </div>
-
       <div class="flex flex-wrap justify-center gap-2 mt-auto pt-4" v-if="roles.length > 0">
         <span
           v-for="role in roles"

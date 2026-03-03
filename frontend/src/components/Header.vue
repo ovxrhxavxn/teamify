@@ -32,11 +32,11 @@ function goToLFG() {
       <!-- Ссылка №1: LFG-лента -->
       <a
         @click="goToLFG"
-        class="hidden md:flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+        class="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
       >
         <img src="/img/lfg_icon.svg" width="21" height="21" />
         <span
-          class="font-black uppercase text-sm tracking-tight border-b-2 border-transparent hover:border-black transition-all"
+          class="hidden md:inline font-black uppercase text-sm tracking-tight border-b-2 border-transparent hover:border-black transition-all"
         >
           LFG-лента
         </span>
