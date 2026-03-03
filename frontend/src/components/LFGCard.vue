@@ -33,7 +33,7 @@ const roles = computed(() => props.profileData.profile.roles || [])
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div class="text-green-600 font-black text-xl leading-none">{{ faceitData.k_d_ratio }}</div>
+        <div class="font-black text-xl leading-none">{{ faceitData.k_d_ratio }}</div>
         <div class="text-[10px] uppercase font-bold text-gray-500">K/D</div>
       </div>
     </div>
@@ -51,12 +51,21 @@ const roles = computed(() => props.profileData.profile.roles || [])
         <RatingStars :rating="rating" />
       </div>
 
-      <div class="flex flex-wrap justify-center gap-1 mt-auto pt-4" v-if="roles.length > 0">
+      <div class="flex flex-wrap justify-center gap-2 mt-auto pt-4" v-if="roles.length > 0">
+        <!-- Увеличил gap для большего расстояния между плашками -->
         <span
           v-for="role in roles"
           :key="role.id"
-          class="bg-gray-200 text-gray-700 font-mono text-[10px] uppercase px-2 py-0.5 rounded-sm"
+          class="border border-gray-400 text-gray-800 text-xs font-bold uppercase px-3 py-1"
         >
+          <!-- 
+      - border border-gray-400: добавляет рамку
+      - text-gray-800: делает текст темнее
+      - text-xs: немного увеличивает шрифт
+      - font-bold: делает шрифт жирным (вместо font-mono)
+      - px-3 py-1: корректирует отступы
+      - rounded-sm: можно убрать, если нужны острые углы, как на примере
+    -->
           {{ role.name }}
         </span>
       </div>

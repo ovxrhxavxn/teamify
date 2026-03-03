@@ -7,6 +7,7 @@ import RatingStars from '@/components/RatingStars.vue'
 import Review from '@/components/Review.vue'
 import Spinner from '@/components/Spinner.vue'
 import axios from 'axios'
+
 const route = useRoute()
 const userStore = useUserStore()
 // Состояние профиля
@@ -202,8 +203,13 @@ function cancelEditingRoles() {
 }
 
 async function saveRoles() {
-  await userStore.updateProfileRoles(selectedRoleIds.value)
-  // userStore сам обновит локальный стейт, поэтому нам нужно только выйти из режима редактирования
+  // `updateProfileRoles` теперь возвращает новый список ролей
+  const newRoles = await userStore.updateProfileRoles(selectedRoleIds.value)
+
+  if (newRoles !== null && viewedProfile.value) {
+    viewedProfile.value.profile.roles = newRoles
+  }
+
   isEditingRoles.value = false
 }
 </script>
@@ -311,19 +317,19 @@ async function saveRoles() {
             <p v-if="viewedProfile.profile.description" class="text-gray-700 whitespace-pre-wrap">
               {{ viewedProfile.profile.description }}
             </p>
-            <p v-else class="text-gray-400 italic">Пользователь еще не добавил описание.</p>
+            <p v-else class="text-gray-400 italic">Тайна за семью смоками</p>
           </div>
         </section>
 
         <section>
           <div class="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
-            <h3 class="font-black text-2xl uppercase">Роли</h3>
+            <h3 class="font-black text-xl uppercase">Роли</h3>
             <button
               v-if="isOwnProfile && !isEditingRoles"
               @click="startEditingRoles"
               class="text-sm font-bold uppercase text-blue-600 hover:text-blue-800"
             >
-              Редактировать
+              <img src="/img/pencil-square.svg" width="18" height="18" />
             </button>
           </div>
           <!-- Режим редактирования ролей -->
@@ -332,12 +338,12 @@ async function saveRoles() {
               <label
                 v-for="role in allRoles"
                 :key="role.id"
-                class="flex items-center gap-2 p-3 border-2 border-gray-200 cursor-pointer transition-all"
+                class="flex items-center gap-2 p-3 border-2 border-gray-200 cursor-pointer transition-all justify-center"
                 :class="{
                   'border-black bg-black text-white shadow-md': selectedRoleIds.includes(role.id),
                 }"
               >
-                <input type="checkbox" :value="role.id" v-model="selectedRoleIds" class="h-4 w-4" />
+                <input type="checkbox" :value="role.id" v-model="selectedRoleIds" class="sr-only" />
                 <span class="font-bold uppercase text-sm">{{ role.name }}</span>
               </label>
             </div>
@@ -359,7 +365,6 @@ async function saveRoles() {
           </div>
           <!-- Режим отображения ролей -->
           <div v-else>
-            <!-- Заменяем `viewedProfile.profile.roles.length > 0` на `(viewedProfile.profile.roles || []).length > 0` -->
             <div v-if="(viewedProfile.profile.roles || []).length > 0">
               <div class="flex flex-wrap gap-2">
                 <span
@@ -371,13 +376,12 @@ async function saveRoles() {
                 </span>
               </div>
             </div>
-            <p v-else class="text-gray-400 italic">Пользователь не выбрал ни одной роли.</p>
+            <p v-else class="text-gray-400 italic">Капитан, стрелец и на AWP игрец</p>
           </div>
         </section>
 
         <section>
           <h3 class="font-black text-xl uppercase mb-6 flex items-center gap-2">
-            <img src="/img/crosshair.svg" width="25" height="25" />
             Основная статистика
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -450,7 +454,9 @@ async function saveRoles() {
           <div v-else-if="reviews.length > 0">
             <Review v-for="review in reviews" :key="review.id" :review="review" />
           </div>
-          <div v-else class="text-center text-gray-500 italic">Отзывов пока нет.</div>
+          <div v-else class="text-center text-gray-500 italic">
+            Расскажи первым, как он слил тебе игру
+          </div>
           <div v-if="isReviewsLoadingMore" class="flex justify-center py-4">
             <Spinner size="sm" />
           </div>

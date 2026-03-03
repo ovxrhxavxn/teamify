@@ -39,6 +39,6 @@ class ProfileService:
         return None
 
 
-    async def get_all_roles(self) -> List[GameRoleSchema]:
+    async def get_all_roles(self):
         roles = await self._repo.get_all_roles()
         return [GameRoleSchema.model_validate(role) for role in roles]

@@ -14,7 +14,7 @@ from .database.setup import create_tables, async_session_maker
 
 async def seed_roles():
     """Добавляет базовые роли в БД, если их там еще нет."""
-    roles_to_seed = ["AWP", "RIFLER", "ENTRY", "SUPPORT", "IGL", "LURKER"]
+    roles_to_seed = ["AWP", "ENTRY", "SUPPORT", "IGL", "LURKER"]
     async with async_session_maker() as session:
         for role_name in roles_to_seed:
             exists = await session.execute(select(GameRole).where(GameRole.name == role_name))

@@ -1,4 +1,5 @@
-# services.py
+from typing import Optional, List
+
 from .repositories import AbstractUserRepository
 from ..profiles.schemas import UserProfileResponse, ProfileFromDB
 from ..faceit.schemas import FaceitDataFromDB
@@ -14,10 +15,27 @@ class LFGStatusService:
         await self._repo.get_or_create(user_id)
         await self._repo.update_status(user_id, is_active)
 
-    async def get_active_players(self, exclude_user_id: int, offset: int, limit: int):
+
+    async def get_active_players(
+        self, 
+        exclude_user_id: int, 
+        offset: int, 
+        limit: int,
+        min_elo: Optional[int],
+        max_elo: Optional[int],
+        min_rating: Optional[float],
+        role_ids: Optional[List[int]]
+    ):
         profiles_data = await self._repo.get_active_players_profiles(
-            exclude_user_id, offset=offset, limit=limit
+            exclude_user_id,
+            offset=offset,
+            limit=limit,
+            min_elo=min_elo,
+            max_elo=max_elo,
+            min_rating=min_rating,
+            role_ids=role_ids
         )
+    # --- КОНЕЦ ИЗМЕНЕНИЙ ---
         active_players = []
         for profile, faceit_data, user in profiles_data:
             active_players.append(

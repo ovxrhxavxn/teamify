@@ -15,7 +15,7 @@ from ..profiles.services import ProfileService
 from ..profiles.dependencies import get_profile_service
 from ..profiles.schemas import Profile
 from ..encryption.services import EncryptionService
-from ..encryption.dependencoes import get_encryption_service
+from ..encryption.dependencies import get_encryption_service
 from .schemas import (
     FaceitAuthData, 
     FaceitData, 

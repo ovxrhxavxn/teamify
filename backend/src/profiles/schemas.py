@@ -20,6 +20,9 @@ class Profile(BaseModel):
 
 class ProfileFromDB(Profile):
     id: int
+
+    roles: List[GameRoleSchema] = []
+    
     class Config:
         from_attributes = True
 

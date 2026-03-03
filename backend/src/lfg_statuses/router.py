@@ -1,5 +1,7 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
+
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query, HTTPException, status
+
 from ..auth.security import get_current_user
 from ..users.schemas import UserFromDB
 from .schemas import LFGStatusUpdate, ActivePlayer
@@ -39,16 +41,26 @@ async def get_my_lfg_status(current_user: Annotated[UserFromDB, Depends(get_curr
     return LFGStatusUpdate(is_active=status_obj.is_active)
 
 
-# Эндпоинт для получения списка игроков теперь принимает параметры пагинации
 @router.get("/active", response_model=List[ActivePlayer])
 async def get_active_players(
     current_user: Annotated[UserFromDB, Depends(get_current_user)],
     lfg_service: Annotated[LFGStatusService, Depends(get_lfg_status_service)],
     offset: int = 0,
-    limit: int = 3
+    limit: int = 3,
+    min_elo: Optional[int] = Query(None, description="Минимальное значение ELO"),
+    max_elo: Optional[int] = Query(None, description="Максимальное значение ELO"),
+    min_rating: Optional[float] = Query(None, description="Минимальный рейтинг (1.0 - 5.0)"),
+    role_ids: Optional[List[int]] = Query(None, description="Список ID требуемых ролей")
+
 ):
     return await lfg_service.get_active_players(
-        exclude_user_id=current_user.id, offset=offset, limit=limit
+        exclude_user_id=current_user.id, 
+        offset=offset, 
+        limit=limit,
+        min_elo=min_elo,
+        max_elo=max_elo,
+        min_rating=min_rating,
+        role_ids=role_ids
     )
 
 
