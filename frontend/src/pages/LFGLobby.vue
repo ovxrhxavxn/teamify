@@ -4,26 +4,47 @@ import Header from '@/components/Header.vue'
 import LFGCard from '@/components/LFGCard.vue'
 import Spinner from '@/components/Spinner.vue'
 import { useLfgStore } from '@/stores/lfg'
+import { useDebounceFn } from '@vueuse/core'
+import axios from 'axios'
 
 const lfgStore = useLfgStore()
-// Состояния для фильтров
+
 const eloRange = ref([0, 4500])
-const minRating = ref(1)
+const minRating = ref(0)
 const selectedRoles = ref([])
-// Отфильтрованный список игроков
-const filteredPlayers = computed(() => {
-  return lfgStore.activePlayers.filter((player) => {
-    const elo = player.faceit_data.elo
-    const inEloRange = elo >= eloRange.value[0] && elo <= eloRange.value[1]
-    // TODO: Добавить фильтрацию по рейтингу и ролям, когда эти данные будут
-    return inEloRange
-  })
+const allRoles = ref([])
+
+const filters = computed(() => {
+  const params = {
+    min_elo: eloRange.value[0] > 0 ? eloRange.value[0] : null,
+    max_elo: eloRange.value[1] < 4500 ? eloRange.value[1] : null,
+    min_rating: minRating.value > 0 ? minRating.value : null,
+    role_ids: selectedRoles.value,
+  }
+
+  return Object.fromEntries(
+    Object.entries(params).filter(([key, value]) => {
+      if (value === null || value === undefined) {
+        return false
+      }
+      if (Array.isArray(value) && value.length === 0) {
+        return false
+      }
+      return true
+    }),
+  )
 })
-// --- Логика для Intersection Observer ---
+
+const debouncedSearch = useDebounceFn(() => {
+  // Перезапускаем поиск с новыми фильтрами
+  lfgStore.fetchInitialPlayers(filters.value)
+}, 500)
+
+watch(filters, debouncedSearch, { deep: true })
+
 const observerTarget = ref(null)
 let observer = null
-// Следим за элементом-триггером. Когда он появляется/исчезает,
-// мы создаем/отключаем наблюдатель.
+
 watch(observerTarget, (newEl) => {
   if (newEl) {
     observer = new IntersectionObserver(
@@ -40,11 +61,20 @@ watch(observerTarget, (newEl) => {
     observer = null
   }
 })
-onMounted(() => {
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('https://teamify.pro/api/profiles/roles')
+    allRoles.value = response.data
+  } catch (error) {
+    console.error('Ошибка при загрузке ролей:', error)
+  }
+
   lfgStore.fetchMyStatus()
   lfgStore.fetchInitialPlayers()
   lfgStore.connectWebSocket()
 })
+
 onUnmounted(() => {
   lfgStore.disconnectWebSocket()
   if (observer) {
@@ -52,6 +82,7 @@ onUnmounted(() => {
   }
 })
 </script>
+
 <template>
   <Header></Header>
   <div class="min-h-screen bg-gray-100">
@@ -67,7 +98,7 @@ onUnmounted(() => {
                 <a-switch :checked="lfgStore.isSearching" @change="lfgStore.toggleSearchStatus" />
               </div>
             </div>
-            <!-- Блок Фильтров -->
+
             <div class="bg-white p-6 border-2 border-black">
               <div class="flex items-center gap-2 mb-6 border-b-2 border-black pb-2">
                 <img src="/img/funnel.svg" height="22" width="22" />
@@ -91,11 +122,12 @@ onUnmounted(() => {
                   Min. Rating
                 </label>
                 <a-select v-model:value="minRating" class="w-full">
-                  <a-select-option :value="1">1+ Stars</a-select-option>
-                  <a-select-option :value="2">2+ Stars</a-select-option>
-                  <a-select-option :value="3">3+ Stars</a-select-option>
-                  <a-select-option :value="4">4+ Stars</a-select-option>
-                  <a-select-option :value="5">5 Stars</a-select-option>
+                  <a-select-option :value="0">Любой</a-select-option>
+                  <a-select-option :value="1">1+ звёзд</a-select-option>
+                  <a-select-option :value="2">2+ звёзд</a-select-option>
+                  <a-select-option :value="3">3+ звёзд</a-select-option>
+                  <a-select-option :value="4">4+ звёзд</a-select-option>
+                  <a-select-option :value="5">5 звёзд</a-select-option>
                 </a-select>
               </div>
               <div>
@@ -105,25 +137,22 @@ onUnmounted(() => {
                 </label>
                 <a-checkbox-group v-model:value="selectedRoles" class="w-full">
                   <div class="grid grid-cols-2 gap-2">
-                    <a-checkbox value="AWP">AWP</a-checkbox>
-                    <a-checkbox value="RIFLER">RIFLER</a-checkbox>
-                    <a-checkbox value="ENTRY">ENTRY</a-checkbox>
-                    <a-checkbox value="SUPPORT">SUPPORT</a-checkbox>
-                    <a-checkbox value="IGL">IGL</a-checkbox>
-                    <a-checkbox value="LURKER">LURKER</a-checkbox>
+                    <a-checkbox v-for="role in allRoles" :key="role.id" :value="role.id">
+                      {{ role.name }}
+                    </a-checkbox>
                   </div>
                 </a-checkbox-group>
               </div>
             </div>
           </div>
         </aside>
-        <!-- Основной контент -->
+
         <div class="flex-1">
           <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-black uppercase flex items-center gap-2">
               Игроки в поиске
               <span class="bg-black text-white px-2 text-sm py-1 rounded-sm">{{
-                filteredPlayers.length
+                lfgStore.activePlayers.length
               }}</span>
             </h1>
           </div>
@@ -132,24 +161,24 @@ onUnmounted(() => {
             <Spinner text="Загрузка игроков..." />
           </div>
           <!-- Есть игроки для отображения -->
-          <div v-else-if="filteredPlayers.length > 0">
+          <div v-else-if="lfgStore.activePlayers.length > 0">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               <LFGCard
-                v-for="player in filteredPlayers"
+                v-for="player in lfgStore.activePlayers"
                 :key="player.profile.id"
                 :profileData="player"
               />
             </div>
-            <!-- Индикатор подгрузки следующих -->
+
             <div v-if="lfgStore.isLoadingMore" class="mt-12 flex justify-center">
               <Spinner size="sm" />
             </div>
-            <!-- Элемент-триггер для подгрузки -->
+
             <div v-if="lfgStore.hasMorePlayers" ref="observerTarget" style="height: 50px"></div>
           </div>
-          <!-- Игроки не найдены -->
+
           <div v-else class="text-center py-10 text-gray-500">
-            В данный момент нет игроков, соответствующих вашим фильтрам.
+            Пусто, словно обойма во время пика
           </div>
         </div>
       </div>

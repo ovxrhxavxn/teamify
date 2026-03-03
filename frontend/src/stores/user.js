@@ -12,6 +12,31 @@ export const useUserStore = defineStore('user', {
     isAuthenticated: (state) => !!state.profile,
   },
   actions: {
+    async updateProfileRoles(roleIds) {
+      this.isSaving = true
+      try {
+        const token = localStorage.getItem('user_token')
+        const response = await axios.put(
+          'https://teamify.pro/api/profiles/me',
+          { role_ids: roleIds },
+          { headers: { Authorization: `Bearer ${token}` } },
+        )
+        const updatedProfile = response.data
+        // Обновляем состояние в сторе
+        if (this.profile) {
+          this.profile.profile.roles = updatedProfile.roles
+        }
+        // --- ВОЗВРАЩАЕМ ОБНОВЛЕННЫЕ ДАННЫЕ ---
+        return updatedProfile.roles
+      } catch (error) {
+        console.error('Ошибка при обновлении ролей:', error)
+        // В случае ошибки возвращаем null или выбрасываем ошибку
+        return null
+      } finally {
+        this.isSaving = false
+      }
+    },
+
     async fetchUser() {
       const token = localStorage.getItem('user_token')
       if (!token) {
@@ -35,6 +60,7 @@ export const useUserStore = defineStore('user', {
         this.isLoading = false
       }
     },
+
     async updateProfileDescription(newDescription) {
       this.isSaving = true
       try {
@@ -59,6 +85,7 @@ export const useUserStore = defineStore('user', {
         this.isSaving = false
       }
     },
+
     logout() {
       this.profile = null // Очищаем данные
       localStorage.removeItem('user_token')

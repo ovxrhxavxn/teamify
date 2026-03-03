@@ -1,11 +1,12 @@
-from typing import Protocol, Optional
+from typing import Protocol, Optional, List
 
 from sqlalchemy import select, update, insert
+from sqlalchemy.orm import selectinload
 
 from ..database.setup import async_session_maker
 from .models import LFGStatus
 from ..users.models import User
-from ..profiles.models import Profile
+from ..profiles.models import Profile, GameRole
 from ..faceit.models import FaceitData
 
 
@@ -17,7 +18,7 @@ class AbstractUserRepository[Entity](Protocol):
     async def update_status(self, user_id: int, is_active: bool) -> None:
         ...
 
-    async def get_active_players_profiles(self, exclude_user_id: int):
+    async def get_active_players_profiles(self, exclude_user_id: int, offset: int, limit: int, min_elo: Optional[int], max_elo: Optional[int], min_rating: Optional[float], role_ids: Optional[List[int]]): # <--- Обновить сигнатуру
         ...
     
 
@@ -43,7 +44,16 @@ class LFGStatusRepository:
             await session.commit()
 
 
-    async def get_active_players_profiles(self, exclude_user_id: int, offset: int, limit: int):
+    async def get_active_players_profiles(
+        self, 
+        exclude_user_id: int, 
+        offset: int, 
+        limit: int,
+        min_elo: Optional[int],
+        max_elo: Optional[int],
+        min_rating: Optional[float],
+        role_ids: Optional[List[int]]
+    ):
         async with async_session_maker() as session:
             query = (
                 select(Profile, FaceitData, User)
@@ -51,8 +61,20 @@ class LFGStatusRepository:
                 .join(FaceitData, User.id == FaceitData.user_id)
                 .join(LFGStatus, User.id == LFGStatus.user_id)
                 .where(LFGStatus.is_active == True, User.id != exclude_user_id)
-                .offset(offset)
-                .limit(limit)
+                .options(selectinload(Profile.roles))
             )
+
+            if min_elo is not None:
+                query = query.where(FaceitData.elo >= min_elo)
+            if max_elo is not None:
+                query = query.where(FaceitData.elo <= max_elo)
+            if min_rating is not None:
+                query = query.where(User.rating >= min_rating)
+
+            if role_ids:
+                query = query.where(Profile.roles.any(GameRole.id.in_(role_ids)))
+
+            query = query.offset(offset).limit(limit)
+            
             result = await session.execute(query)
             return result.all()

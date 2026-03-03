@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, nextTick } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Header from '@/components/Header.vue'
@@ -7,6 +7,7 @@ import RatingStars from '@/components/RatingStars.vue'
 import Review from '@/components/Review.vue'
 import Spinner from '@/components/Spinner.vue'
 import axios from 'axios'
+
 const route = useRoute()
 const userStore = useUserStore()
 // Состояние профиля
@@ -34,6 +35,22 @@ const isOwnProfile = computed(() => {
   }
   return userStore.profile.profile.user_id === viewedProfile.value.profile.user_id
 })
+
+// --- НОВЫЕ СОСТОЯНИЯ ДЛЯ РОЛЕЙ ---
+const allRoles = ref([]) // Список всех доступных ролей с сервера
+const isEditingRoles = ref(false)
+const selectedRoleIds = ref([]) // ID ролей, выбранных в режиме редактирования
+
+// --- ЗАГРУЗКА СПИСКА ВСЕХ РОЛЕЙ ---
+onMounted(async () => {
+  try {
+    const response = await axios.get('https://teamify.pro/api/profiles/roles')
+    allRoles.value = response.data
+  } catch (error) {
+    console.error('Ошибка при загрузке списка ролей:', error)
+  }
+})
+
 const targetUserId = computed(() => {
   if (route.params.id) {
     return route.params.id
@@ -175,7 +192,28 @@ async function saveProfile() {
   }
   isEditing.value = false
 }
+
+function startEditingRoles() {
+  selectedRoleIds.value = (viewedProfile.value.profile.roles || []).map((role) => role.id)
+  isEditingRoles.value = true
+}
+
+function cancelEditingRoles() {
+  isEditingRoles.value = false
+}
+
+async function saveRoles() {
+  // `updateProfileRoles` теперь возвращает новый список ролей
+  const newRoles = await userStore.updateProfileRoles(selectedRoleIds.value)
+
+  if (newRoles !== null && viewedProfile.value) {
+    viewedProfile.value.profile.roles = newRoles
+  }
+
+  isEditingRoles.value = false
+}
 </script>
+
 <template>
   <Header></Header>
   <div v-if="isLoadingProfile" class="text-center py-20">
@@ -244,13 +282,13 @@ async function saveProfile() {
       <div class="w-full md:w-2/3 space-y-12">
         <section>
           <div class="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
-            <h3 class="font-black text-2xl uppercase">Обо мне</h3>
+            <h3 class="font-black text-xl uppercase">Обо мне</h3>
             <button
               v-if="isOwnProfile && !isEditing"
               @click="startEditing"
-              class="text-sm font-bold uppercase text-blue-600 hover:text-blue-800"
+              class="font-bold uppercase text-blue-600 hover:text-blue-800 cursor-pointer"
             >
-              Редактировать
+              <img src="/img/pencil-square.svg" width="18" height="18" />
             </button>
           </div>
           <div v-if="isOwnProfile && isEditing">
@@ -279,12 +317,71 @@ async function saveProfile() {
             <p v-if="viewedProfile.profile.description" class="text-gray-700 whitespace-pre-wrap">
               {{ viewedProfile.profile.description }}
             </p>
-            <p v-else class="text-gray-400 italic">Пользователь еще не добавил описание.</p>
+            <p v-else class="text-gray-400 italic">Тайна за семью смоками</p>
           </div>
         </section>
+
         <section>
-          <h3 class="font-black text-2xl uppercase mb-6 flex items-center gap-2">
-            <img src="/img/crosshair.svg" width="25" height="25" />
+          <div class="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
+            <h3 class="font-black text-xl uppercase">Роли</h3>
+            <button
+              v-if="isOwnProfile && !isEditingRoles"
+              @click="startEditingRoles"
+              class="text-sm font-bold uppercase text-blue-600 hover:text-blue-800"
+            >
+              <img src="/img/pencil-square.svg" width="18" height="18" />
+            </button>
+          </div>
+          <!-- Режим редактирования ролей -->
+          <div v-if="isOwnProfile && isEditingRoles">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <label
+                v-for="role in allRoles"
+                :key="role.id"
+                class="flex items-center gap-2 p-3 border-2 border-gray-200 cursor-pointer transition-all justify-center"
+                :class="{
+                  'border-black bg-black text-white shadow-md': selectedRoleIds.includes(role.id),
+                }"
+              >
+                <input type="checkbox" :value="role.id" v-model="selectedRoleIds" class="sr-only" />
+                <span class="font-bold uppercase text-sm">{{ role.name }}</span>
+              </label>
+            </div>
+            <div class="flex justify-end gap-4 mt-6">
+              <button
+                @click="cancelEditingRoles"
+                class="px-4 py-2 text-sm font-bold uppercase border-2 border-gray-400"
+              >
+                Отмена
+              </button>
+              <button
+                @click="saveRoles"
+                :disabled="userStore.isSaving"
+                class="px-4 py-2 text-sm font-bold uppercase bg-black !text-white"
+              >
+                {{ userStore.isSaving ? '...' : 'Сохранить' }}
+              </button>
+            </div>
+          </div>
+          <!-- Режим отображения ролей -->
+          <div v-else>
+            <div v-if="(viewedProfile.profile.roles || []).length > 0">
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="role in viewedProfile.profile.roles"
+                  :key="role.id"
+                  class="bg-black text-white font-mono text-xs uppercase px-2 py-1"
+                >
+                  {{ role.name }}
+                </span>
+              </div>
+            </div>
+            <p v-else class="text-gray-400 italic">Капитан, стрелец и на AWP игрец</p>
+          </div>
+        </section>
+
+        <section>
+          <h3 class="font-black text-xl uppercase mb-6 flex items-center gap-2">
             Основная статистика
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -310,7 +407,7 @@ async function saveProfile() {
         </section>
         <section>
           <div class="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
-            <h3 class="font-black text-2xl uppercase">Отзывы</h3>
+            <h3 class="font-black text-l uppercase">Отзывы</h3>
             <span class="bg-black text-white px-2 py-0.5 text-sm">{{
               viewedProfile.total_reviews
             }}</span>
@@ -357,7 +454,9 @@ async function saveProfile() {
           <div v-else-if="reviews.length > 0">
             <Review v-for="review in reviews" :key="review.id" :review="review" />
           </div>
-          <div v-else class="text-center text-gray-500 italic">Отзывов пока нет.</div>
+          <div v-else class="text-center text-gray-500 italic">
+            Расскажи первым, как он слил тебе игру
+          </div>
           <div v-if="isReviewsLoadingMore" class="flex justify-center py-4">
             <Spinner size="sm" />
           </div>

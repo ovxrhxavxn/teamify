@@ -1,5 +1,5 @@
 import asyncio
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -10,7 +10,7 @@ from ..users.dependencies import get_user_service
 from ..users.schemas import UserFromDB
 from .services import ProfileService
 from .dependencies import get_profile_service
-from .schemas import UserProfileResponse, ProfileFromDB, ProfileUpdate
+from .schemas import UserProfileResponse, ProfileFromDB, ProfileUpdate, GameRoleSchema
 from ..faceit.services import FaceitService
 from ..faceit.dependencies import get_faceit_service
 from ..reviews.services import ReviewsService
@@ -18,6 +18,14 @@ from ..reviews.dependencies import get_reviews_service
 
 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
+
+
+@router.get("/roles", response_model=List[GameRoleSchema])
+async def get_all_game_roles(
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)]
+):
+    """Возвращает список всех доступных игровых ролей."""
+    return await profile_service.get_all_roles()
 
 
 @router.get("/me", response_model=UserProfileResponse)
@@ -100,12 +108,12 @@ async def get_user_profile(
 
 @router.put("/me", response_model=ProfileFromDB)
 async def update_my_profile(
-    profile_data: ProfileUpdate, # Тело запроса с новым описанием
+    profile_data: ProfileUpdate, # Тело запроса теперь может содержать и description, и role_ids
     current_user: Annotated[UserFromDB, Depends(get_current_user)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
 ):
     """
-    Обновляет описание профиля текущего пользователя.
+    Обновляет профиль текущего пользователя (описание и/или роли).
     """
     user_id = current_user.id
     updated_profile = await profile_service.update_by_user_id(
@@ -118,3 +126,4 @@ async def update_my_profile(
             detail="Profile not found for the user to update."
         )
     return updated_profile
+
