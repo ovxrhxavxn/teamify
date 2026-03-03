@@ -19,6 +19,9 @@ class AbstractReviewsRepository[Entity](Protocol):
 
     async def get_average_rating_by_profile_id(self, profile_id: int) -> float:
         ...
+
+    async def count_by_profile_id(self, profile_id: int) -> int:
+        ...
     
 
 class ReviewsRepository:
@@ -63,3 +66,12 @@ class ReviewsRepository:
             average_rating = result.scalar_one_or_none()
             # Если отзывов нет, возвращаем 0.0, иначе - посчитанное значение
             return float(average_rating) if average_rating is not None else 0.0
+        
+
+    async def count_by_profile_id(self, profile_id: int) -> int:
+        async with async_session_maker() as session:
+            # Запрос для подсчета записей
+            query = select(func.count()).select_from(self.model).where(self.model.profile_id == profile_id)
+            result = await session.execute(query)
+            # scalar_one вернет одно значение (наше число)
+            return result.scalar_one()

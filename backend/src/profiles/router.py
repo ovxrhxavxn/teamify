@@ -13,6 +13,8 @@ from .dependencies import get_profile_service
 from .schemas import UserProfileResponse, ProfileFromDB, ProfileUpdate
 from ..faceit.services import FaceitService
 from ..faceit.dependencies import get_faceit_service
+from ..reviews.services import ReviewsService
+from ..reviews.dependencies import get_reviews_service
 
 
 router = APIRouter(prefix="/profiles", tags=["Profiles"])
@@ -23,6 +25,7 @@ async def get_my_profile(
     current_user: Annotated[UserFromDB, Depends(get_current_user)],
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     faceit_service: Annotated[FaceitService, Depends(get_faceit_service)],
+    reviews_service: Annotated[ReviewsService, Depends(get_reviews_service)]
 ):
     """
     Возвращает полную информацию о профиле текущего пользователя.
@@ -44,10 +47,14 @@ async def get_my_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Profile or Faceit data not found for the user."
         )
+    
+    total_reviews = await reviews_service.get_total_reviews_for_profile(profile.id)
+
     return UserProfileResponse(
         profile=profile,
         faceit_data=faceit_data,
-        rating=current_user.rating
+        rating=current_user.rating,
+        total_reviews=total_reviews
     )
 
 
@@ -57,6 +64,7 @@ async def get_user_profile(
     profile_service: Annotated[ProfileService, Depends(get_profile_service)],
     faceit_service: Annotated[FaceitService, Depends(get_faceit_service)],
     user_service: Annotated[UserService, Depends(get_user_service)],
+    reviews_service: Annotated[ReviewsService, Depends(get_reviews_service)]
 ):
     """
     Возвращает полную информацию о профиле по ID пользователя.
@@ -79,10 +87,14 @@ async def get_user_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User profile not found."
         )
+    
+    total_reviews = await reviews_service.get_total_reviews_for_profile(profile.id)
+
     return UserProfileResponse(
         profile=profile,
         faceit_data=faceit_data,
-        rating=user.rating
+        rating=user.rating, 
+        total_reviews=total_reviews
     )
 
 

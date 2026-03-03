@@ -63,3 +63,8 @@ class ReviewsService:
                 )
             )
         return reviews_with_author
+    
+
+    async def get_total_reviews_for_profile(self, profile_id: int) -> int:
+        """Возвращает общее количество отзывов для профиля."""
+        return await self._repo.count_by_profile_id(profile_id)
