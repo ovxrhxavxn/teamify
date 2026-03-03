@@ -304,7 +304,9 @@ async function saveProfile() {
         <section>
           <div class="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
             <h3 class="font-black text-2xl uppercase">Отзывы</h3>
-            <span class="bg-black text-white px-2 py-0.5 text-sm">{{ reviews.length }}</span>
+            <span class="bg-black text-white px-2 py-0.5 text-sm">{{
+              viewedProfile.total_reviews
+            }}</span>
           </div>
           <div v-if="!isOwnProfile" class="border-2 border-dashed border-gray-300 p-4 mb-8">
             <h4 class="font-bold uppercase mb-3">Оставить отзыв</h4>
