@@ -8,7 +8,6 @@ const props = defineProps({
   },
 })
 
-// Форматируем дату для отображения
 const formattedDate = computed(() => {
   return new Date(props.review.created_at).toLocaleDateString()
 })
@@ -33,15 +32,8 @@ const formattedDate = computed(() => {
           <div class="text-xs text-gray-500">{{ formattedDate }}</div>
         </div>
       </div>
-      <!-- 
-        ЗАМЕНЯЕМ СТАРЫЙ БЛОК НА НОВЫЙ 
-      -->
+
       <div class="flex items-center gap-1 text-yellow-500">
-        <!-- 
-          Используем v-for для рендера 5 звезд.
-          Мы сравниваем 'star' (от 1 до 5) с рейтингом отзыва.
-          Если star <= review.rating, то показываем закрашенную звезду, иначе - пустую.
-        -->
         <img
           v-for="star in 5"
           :key="star"
@@ -50,7 +42,6 @@ const formattedDate = computed(() => {
           height="14"
         />
       </div>
-      <!-- КОНЕЦ ЗАМЕНЫ -->
     </div>
     <div class="relative pl-6">
       <img src="/img/quote.svg" width="12" height="12" class="absolute left-0 top-1 opacity-50" />

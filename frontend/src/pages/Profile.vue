@@ -256,7 +256,7 @@ async function saveRoles() {
           <div class="space-y-2 mb-6 text-left">
             <div class="flex justify-between items-center text-sm">
               <span class="font-bold text-gray-500">Соотношение K/D</span>
-              <span class="font-mono font-bold text-green-600">
+              <span class="font-mono font-bold">
                 {{ viewedProfile.faceit_data.k_d_ratio }}
               </span>
             </div>

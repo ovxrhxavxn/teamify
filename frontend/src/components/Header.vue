@@ -73,7 +73,7 @@ function goToLFG() {
         </a>
       </div>
       <div class="h-8 w-[2px] bg-gray-200 hidden md:block"></div>
-      <!-- Если нет - показываем кнопку "Выйти" или ничего (пока что) -->
+
       <div v-if="userStore.isAuthenticated">
         <button @click="userStore.logout()" class="text-sm uppercase font-bold hover:opacity-70">
           <img src="/img/logout.svg" width="21" height="21" />

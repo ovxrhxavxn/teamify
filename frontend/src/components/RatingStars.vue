@@ -18,7 +18,6 @@ const ratingColorClass = computed(() => {
 })
 </script>
 
-<!-- frontend/src/components/RatingStars.vue -->
 <template>
   <div class="flex items-center gap-2">
     <!-- Звезды -->
@@ -32,11 +31,6 @@ const ratingColorClass = computed(() => {
       />
     </div>
 
-    <!-- Числовое значение рейтинга -->
-    <!-- 
-      Теперь скобки серого цвета, а само число внутри них
-      получает динамический цвет из computed свойства.
-    -->
     <span class="text-gray-400 font-medium text-sm">
       (
       <span :class="ratingColorClass" class="font-bold">
