@@ -23,7 +23,7 @@ const roles = computed(() => props.profileData.profile.roles || [])
   >
     <div class="bg-gray-50 border-b-2 border-black p-4 flex justify-between items-center h-20">
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div class="font-black text-2xl leading-none">{{ faceitData.lvl }}</div>
+        <div class="font-black text-xl leading-none">{{ faceitData.lvl }}</div>
         <div class="text-[10px] uppercase font-bold text-gray-500">LVL</div>
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
