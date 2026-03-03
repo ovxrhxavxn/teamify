@@ -12,6 +12,8 @@ const props = defineProps({
 const userId = computed(() => props.profileData.profile.user_id)
 const faceitData = computed(() => props.profileData.faceit_data)
 const rating = computed(() => props.profileData.rating)
+
+const roles = computed(() => props.profileData.profile.roles || [])
 </script>
 
 <template>
@@ -47,6 +49,16 @@ const rating = computed(() => props.profileData.rating)
       <h3 class="font-black text-xl uppercase tracking-tight mb-1">{{ faceitData.nickname }}</h3>
       <div class="mb-3">
         <RatingStars :rating="rating" />
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-1 mt-auto pt-4" v-if="roles.length > 0">
+        <span
+          v-for="role in roles"
+          :key="role.id"
+          class="bg-gray-200 text-gray-700 font-mono text-[10px] uppercase px-2 py-0.5 rounded-sm"
+        >
+          {{ role.name }}
+        </span>
       </div>
     </div>
   </router-link>

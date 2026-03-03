@@ -1,6 +1,7 @@
 from typing import Protocol, Optional
 
 from sqlalchemy import select, update, insert
+from sqlalchemy.orm import selectinload
 
 from ..database.setup import async_session_maker
 from .models import LFGStatus
@@ -51,6 +52,8 @@ class LFGStatusRepository:
                 .join(FaceitData, User.id == FaceitData.user_id)
                 .join(LFGStatus, User.id == LFGStatus.user_id)
                 .where(LFGStatus.is_active == True, User.id != exclude_user_id)
+                # --- ДОБАВЛЯЕМ ЗАГРУЗКУ РОЛЕЙ ---
+                .options(selectinload(Profile.roles))
                 .offset(offset)
                 .limit(limit)
             )

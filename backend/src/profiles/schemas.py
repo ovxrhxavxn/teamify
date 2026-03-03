@@ -1,8 +1,16 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
 from ..faceit.schemas import FaceitDataFromDB
+
+
+class GameRoleSchema(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
 
 
 class Profile(BaseModel):
@@ -22,5 +30,7 @@ class UserProfileResponse(BaseModel):
     rating: float
     total_reviews: Optional[int] = None
 
+
 class ProfileUpdate(BaseModel):
     description: Optional[str] = None
+    role_ids: Optional[List[int]] = None
