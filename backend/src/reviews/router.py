@@ -4,7 +4,7 @@ from ..auth.security import get_current_user
 from ..users.schemas import UserFromDB
 from ..profiles.dependencies import get_profile_service
 from ..profiles.services import ProfileService
-from .schemas import ReviewWithAuthor, ReviewCreate
+from .schemas import ReviewWithAuthor, ReviewCreate, ReviewCreateResponse
 from .services import ReviewsService
 from .dependencies import  get_reviews_service
 from ..dependencies import pagination
@@ -25,7 +25,7 @@ async def get_reviews_for_profile(
     return reviews
 
 
-@router.post("/{profile_id}", status_code=status.HTTP_201_CREATED)
+@router.post("/{profile_id}", status_code=status.HTTP_201_CREATED, response_model=ReviewCreateResponse)
 async def add_review_for_profile(
     profile_id: int,
     review_data: ReviewCreate,
@@ -52,9 +52,9 @@ async def add_review_for_profile(
         )
     # --- КОНЕЦ НОВОЙ ЛОГИКИ ПРОВЕРКИ ---
 
-    new_review_id = await reviews_service.add_review(
+    response_data = await reviews_service.add_review(
         schema=review_data,
         profile_id=profile_id,
         author_id=current_user.id
     )
-    return {"status": "success", "review_id": new_review_id}
+    return response_data

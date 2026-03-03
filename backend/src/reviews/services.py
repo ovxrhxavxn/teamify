@@ -1,7 +1,7 @@
 from .repositories import AbstractReviewsRepository
 from .schemas import (
     ReviewFromDB, 
-    Review, 
+    ReviewCreateResponse, 
     ReviewCreate, 
     ReviewWithAuthor, 
     ReviewAuthor
@@ -33,20 +33,17 @@ class ReviewsService:
         # ПРАВИЛЬНЫЙ КОД: передаем словарь напрямую
         review_id = await self._repo.add(review_data)
 
-        # --- НАЧАЛО НОВОЙ ЛОГИКИ ОБНОВЛЕНИЯ РЕЙТИНГА ---
-
-        # 1. Пересчитываем средний рейтинг для профиля, на который оставили отзыв
         new_average_rating = await self._repo.get_average_rating_by_profile_id(profile_id)
 
-        # 2. Находим, какому пользователю принадлежит этот профиль
         profile = await self._profile_repo.get(profile_id)
         if profile:
             # 3. Обновляем рейтинг этого пользователя в его таблице
             await self._user_repo.update_rating(profile.user_id, new_average_rating)
 
-        # --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
-        return review_id
+        return ReviewCreateResponse(
+            review_id=review_id,
+            new_average_rating=new_average_rating
+        )
 
 
     async def get_by_profile_id(self, profile_id: int, offset: int, limit: int):

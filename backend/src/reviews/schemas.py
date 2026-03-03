@@ -36,3 +36,8 @@ class ReviewWithAuthor(BaseModel):
     rating: int
     created_at: date
     author: ReviewAuthor
+
+
+class ReviewCreateResponse(BaseModel):
+    review_id: int
+    new_average_rating: float
