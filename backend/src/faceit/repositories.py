@@ -1,7 +1,6 @@
 import logging
-
 from aiohttp import ClientSession, BasicAuth, ClientError
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update
 from fastapi import HTTPException, status
 
 from ..database.repositories import BaseRepository
@@ -12,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class FaceitAPIClient:
-
     async def get_token(self, code: str, code_verifier: str) -> dict:
         auth = BasicAuth(
             login=faceit_config.FACEIT_CLIENT_ID,
@@ -86,7 +84,11 @@ class FaceitAPIClient:
                     response.raise_for_status()
                     data = await response.json()
                     if "errors" in data:
-                        logger.warning("Faceit stats errors for %s: %s", player_id, data["errors"])
+                        logger.warning(
+                            "Faceit stats errors for %s: %s",
+                            player_id,
+                            data["errors"],
+                        )
                         return None
                     return data
             except ClientError as e:
@@ -95,8 +97,6 @@ class FaceitAPIClient:
 
 
 class FaceitRepository(BaseRepository):
-    """Репозиторий для работы с таблицами faceit_data / faceit_auth_data."""
-
     async def get_faceit_data_by_guid(self, guid: str) -> FaceitData | None:
         query = select(FaceitData).where(FaceitData.player_id == guid)
         result = await self._session.execute(query)
@@ -111,6 +111,16 @@ class FaceitRepository(BaseRepository):
         stmt = insert(FaceitAuthData).values(**schema).returning(FaceitAuthData.id)
         result = await self._session.execute(stmt)
         return result.scalar_one()
+
+    async def update_faceit_auth_data(
+        self, user_id: int, encrypted_refresh_token: str
+    ) -> None:
+        stmt = (
+            update(FaceitAuthData)
+            .where(FaceitAuthData.user_id == user_id)
+            .values(encrypted_refresh_token=encrypted_refresh_token)
+        )
+        await self._session.execute(stmt)
 
     async def add_faceit_data(self, schema: dict) -> int:
         stmt = insert(FaceitData).values(**schema).returning(FaceitData.id)

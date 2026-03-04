@@ -14,8 +14,9 @@ const formattedDate = computed(() => {
 </script>
 
 <template>
-  <div
-    class="border border-black p-4 mb-4 bg-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
+  <router-link
+    :to="{ name: 'user-profile', params: { id: review.author_id } }"
+    class="block border border-black p-4 mb-4 bg-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all cursor-pointer"
   >
     <div class="flex justify-between items-start mb-3">
       <div class="flex items-center gap-3">
@@ -34,7 +35,6 @@ const formattedDate = computed(() => {
           <div class="text-xs text-gray-500">{{ formattedDate }}</div>
         </div>
       </div>
-
       <div class="flex items-center gap-1 text-yellow-500">
         <img
           v-for="star in 5"
@@ -51,5 +51,5 @@ const formattedDate = computed(() => {
         {{ review.content }}
       </div>
     </div>
-  </div>
+  </router-link>
 </template>

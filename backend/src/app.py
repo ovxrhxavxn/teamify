@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 
+from .auth.router import router as auth_router
 from .faceit.router import router as faceit_router
 from .profiles.router import router as profiles_router
 from .profiles.models import GameRole
@@ -12,12 +13,13 @@ from .reviews.router import router as reviews_router
 from .lfg_statuses.router import router as lfg_router
 from .database.setup import create_tables, async_session_maker
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 async def seed_roles():
-    roles_to_seed = ["AWP", "ENTRY", "SUPPORT", "IGL", "LURKER"]
+    roles_to_seed = ["AWP", "ENTRY/ANCHOR", "SUPPORT", "IGL", "LURKER"]
     async with async_session_maker() as session:
         for role_name in roles_to_seed:
             exists = await session.execute(
@@ -52,7 +54,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-routers = [faceit_router, profiles_router, reviews_router, lfg_router]
+routers = [auth_router, faceit_router, profiles_router, reviews_router, lfg_router]
 for router in routers:
     app.include_router(router)
 

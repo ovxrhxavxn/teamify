@@ -31,7 +31,6 @@ class ReviewsService:
         review_data["author_id"] = author_id
 
         review_id = await self._repo.add(review_data)
-
         new_average_rating = await self._repo.get_average_rating_by_profile_id(profile_id)
 
         profile = await self._profile_repo.get(profile_id)
@@ -50,10 +49,10 @@ class ReviewsService:
         limit: int,
     ) -> list[ReviewWithAuthor]:
         results = await self._repo.get_by_profile_id_with_author(profile_id, offset, limit)
-
         return [
             ReviewWithAuthor(
                 id=review.id,
+                author_id=review.author_id,
                 content=review.content,
                 rating=review.rating,
                 created_at=review.created_at,

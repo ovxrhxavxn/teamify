@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import RatingStars from '@/components/RatingStars.vue'
-import { getLevelColorClass, formatStat, getKDColorClass } from '@/utils'
+import { formatStat } from '@/utils'
 
 const props = defineProps({
   profileData: {
@@ -14,7 +14,6 @@ const userId = computed(() => props.profileData.profile.user_id)
 const faceitData = computed(() => props.profileData.faceit_data)
 const rating = computed(() => props.profileData.rating)
 const roles = computed(() => props.profileData.profile.roles || [])
-const levelColor = computed(() => getLevelColorClass(faceitData.value.lvl))
 </script>
 
 <template>
@@ -24,9 +23,7 @@ const levelColor = computed(() => getLevelColorClass(faceitData.value.lvl))
   >
     <div class="bg-gray-50 border-b-2 border-black p-4 flex justify-between items-center h-20">
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div :class="levelColor" class="font-black text-xl leading-none">
-          {{ formatStat(faceitData.lvl) }}
-        </div>
+        <div class="font-black text-xl leading-none">{{ formatStat(faceitData.lvl) }}</div>
         <div class="text-[10px] uppercase font-bold text-gray-500">LVL</div>
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
@@ -36,9 +33,7 @@ const levelColor = computed(() => getLevelColorClass(faceitData.value.lvl))
       </div>
       <div class="h-full w-[2px] bg-gray-200 mx-4"></div>
       <div class="flex flex-col items-center justify-center min-w-[60px]">
-        <div :class="getKDColorClass(faceitData.k_d_ratio)" class="font-black text-xl leading-none">
-          {{ formatStat(faceitData.k_d_ratio) }}
-        </div>
+        <div class="font-black text-xl leading-none">{{ formatStat(faceitData.k_d_ratio) }}</div>
         <div class="text-[10px] uppercase font-bold text-gray-500">K/D</div>
       </div>
     </div>
@@ -59,7 +54,7 @@ const levelColor = computed(() => getLevelColorClass(faceitData.value.lvl))
         <span
           v-for="role in roles"
           :key="role.id"
-          class="border border-gray-400 text-gray-800 text-xs font-bold uppercase px-3 py-1"
+          class="bg-black text-white font-mono text-xs uppercase px-2 py-1"
         >
           {{ role.name }}
         </span>

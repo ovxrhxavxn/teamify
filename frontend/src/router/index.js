@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import axios from 'axios'
 import Home from '../pages/Home.vue'
 import Profile from '../pages/Profile.vue'
 import AuthCallback from '../pages/AuthCallback.vue'
 import LFGLobby from '@/pages/LFGLobby.vue'
-// 1. Импортируем нашу новую функцию
 import { isTokenExpired } from '../utils.js'
 
 const router = createRouter({
@@ -40,35 +40,37 @@ const router = createRouter({
   ],
 })
 
-// 3. Добавляем навигационный страж
-router.beforeEach((to, from, next) => {
-  const tokenExpired = isTokenExpired()
+/**
+ * Пытается обновить access token через refresh cookie.
+ * Возвращает true если удалось, false если нет.
+ */
+async function tryRefreshToken() {
+  try {
+    const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://teamify.pro/api'
+    const response = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true })
+    localStorage.setItem('user_token', response.data.access_token)
+    return true
+  } catch {
+    localStorage.removeItem('user_token')
+    return false
+  }
+}
 
-  // Логика для защищенных маршрутов
-  if (to.meta.requiresAuth) {
-    if (tokenExpired) {
-      // Если токен просрочен, а пользователь пытается зайти на защищенную страницу,
-      // удаляем старый токен и перенаправляем на главную.
-      localStorage.removeItem('user_token')
-      next({ name: 'home' })
-    } else {
-      // Если токен валиден, разрешаем переход.
-      next()
-    }
+router.beforeEach(async (to, from, next) => {
+  const needsAuth = to.meta.requiresAuth || to.name === 'home'
+
+  // Если токен истёк — пытаемся обновить через refresh cookie
+  if (needsAuth && isTokenExpired()) {
+    await tryRefreshToken()
   }
-  // Логика для страницы входа (Home.vue)
-  else if (to.name === 'home') {
-    if (!tokenExpired) {
-      // Если пользователь с валидным токеном пытается зайти на главную,
-      // перенаправляем его сразу в профиль.
-      next({ name: 'profile' })
-    } else {
-      // Если токена нет или он просрочен, показываем главную страницу.
-      next()
-    }
-  }
-  // Для всех остальных маршрутов (например, /auth/callback)
-  else {
+
+  const isAuthenticated = !isTokenExpired()
+
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ name: 'home' })
+  } else if (to.name === 'home' && isAuthenticated) {
+    next({ name: 'profile' })
+  } else {
     next()
   }
 })
