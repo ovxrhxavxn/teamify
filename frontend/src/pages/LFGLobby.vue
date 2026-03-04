@@ -8,11 +8,20 @@ import { useDebounceFn } from '@vueuse/core'
 import api from '@/api'
 
 const lfgStore = useLfgStore()
-
 const eloRange = ref([0, 4500])
 const minRating = ref(0)
 const selectedRoles = ref([])
 const allRoles = ref([])
+
+const tips = [
+  'Не забудь заполнить описание профиля — игроки чаще отвечают тем, кто описал свой стиль игры.',
+  'Укажи свои роли — так тебя быстрее найдут те, кому нужен именно твой скилл.',
+  'Включи поиск, чтобы другие игроки видели тебя в ленте.',
+  'Оставляй отзывы тиммейтам — это помогает сообществу.',
+  'Фильтруй по ролям, чтобы найти идеальный состав.',
+]
+
+const randomTip = ref(tips[Math.floor(Math.random() * tips.length)])
 
 const filters = computed(() => {
   const params = {
@@ -74,11 +83,26 @@ onUnmounted(() => {
 
 <template>
   <Header />
+
+  <div class="border-b-2 border-black bg-[#FF5500] overflow-hidden">
+    <div class="flex animate-marquee">
+      <span
+        v-for="i in 2"
+        :key="i"
+        class="shrink-0 text-white font-black uppercase text-sm tracking-wider py-2 px-4"
+      >
+        🔥 НАЙДИ ТИММЕЙТА — ДОМИНИРУЙ НА FACEIT — НЕ ИГРАЙ С РАНДОМАМИ — ПОБЕЖДАЙ ВМЕСТЕ — НАЙДИ
+        ТИММЕЙТА — ДОМИНИРУЙ НА FACEIT — НЕ ИГРАЙ С РАНДОМАМИ — ПОБЕЖДАЙ ВМЕСТЕ —
+      </span>
+    </div>
+  </div>
+
   <div class="min-h-screen bg-gray-100">
     <main class="max-w-[1600px] mx-auto px-6 py-8">
       <div class="flex flex-col lg:flex-row gap-8">
         <aside class="w-full lg:w-80 flex-shrink-0">
           <div class="sticky top-24 space-y-8">
+            <!-- Поиск активен -->
             <div
               class="bg-white p-4 border-2 border-black space-y-3 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
             >
@@ -88,6 +112,7 @@ onUnmounted(() => {
               </div>
             </div>
 
+            <!-- Фильтры -->
             <div
               class="bg-white p-6 border-2 border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
             >
@@ -100,7 +125,7 @@ onUnmounted(() => {
                 <div class="flex items-center justify-between mb-2">
                   <label class="text-xs font-bold uppercase flex items-center gap-1">
                     <img src="/img/trophy.svg" height="16" width="16" />
-                    ELO Range
+                    Диапазон ELO
                   </label>
                   <span class="text-xs font-mono">
                     {{ eloRange[0] }} - {{ eloRange[1] >= 4500 ? '4500+' : eloRange[1] }}
@@ -112,7 +137,7 @@ onUnmounted(() => {
               <div class="mb-6">
                 <label class="block text-xs font-bold uppercase flex items-center gap-1 mb-2">
                   <img src="/img/star.svg" height="16" width="16" />
-                  Min. Rating
+                  Мин. рейтинг
                 </label>
                 <a-select v-model:value="minRating" class="w-full">
                   <a-select-option :value="0">Любой</a-select-option>
@@ -127,7 +152,7 @@ onUnmounted(() => {
               <div>
                 <label class="block text-xs font-bold uppercase flex items-center gap-1 mb-3">
                   <img src="/img/people.svg" height="16" width="16" />
-                  Roles
+                  Роли
                 </label>
                 <a-checkbox-group v-model:value="selectedRoles" class="w-full">
                   <div class="grid grid-cols-2 gap-2">
@@ -136,6 +161,29 @@ onUnmounted(() => {
                     </a-checkbox>
                   </div>
                 </a-checkbox-group>
+              </div>
+            </div>
+
+            <!-- Совет дня -->
+            <div
+              class="bg-yellow-300 border-2 border-black p-4 -rotate-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <div class="text-[10px] font-black uppercase tracking-widest text-black/50 mb-1">
+                💡 Совет дня
+              </div>
+              <p class="text-sm font-bold leading-snug">
+                {{ randomTip }}
+              </p>
+            </div>
+
+            <!-- Декоративный стикер -->
+            <div
+              class="bg-black text-white border-2 border-black p-4 rotate-1 shadow-[4px_4px_0px_0px_rgba(255,85,0,1)]"
+            >
+              <div class="text-center">
+                <div class="text-2xl mb-1">⚡</div>
+                <div class="text-xs font-black uppercase tracking-widest">Не играй один</div>
+                <div class="text-[10px] text-gray-400 uppercase mt-1">Teamify © 2025</div>
               </div>
             </div>
           </div>
@@ -169,8 +217,15 @@ onUnmounted(() => {
             <div v-if="lfgStore.hasMorePlayers" ref="observerTarget" style="height: 50px" />
           </div>
 
-          <div v-else class="text-center py-10 text-gray-500">
-            Пусто, словно обойма во время пика
+          <!-- Пустое состояние -->
+          <div v-else class="flex flex-col items-center justify-center py-20">
+            <div class="border-2 border-dashed border-gray-300 p-12 text-center max-w-md">
+              <div class="text-6xl mb-4">🎯</div>
+              <p class="font-black text-xl uppercase mb-2">Пусто</p>
+              <p class="text-gray-500 text-sm">
+                Словно обойма во время пика. Попробуй изменить фильтры или зайди позже.
+              </p>
+            </div>
           </div>
         </div>
       </div>

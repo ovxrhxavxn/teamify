@@ -67,16 +67,16 @@ class FaceitService:
     async def add_faceit_auth_data(self, schema: FaceitAuthData) -> int:
         return await self._repo.add_faceit_auth_data(schema.model_dump())
 
+    async def update_faceit_auth_data(
+        self, user_id: int, encrypted_refresh_token: str
+    ) -> None:
+        await self._repo.update_faceit_auth_data(user_id, encrypted_refresh_token)
+
     async def add_faceit_data(self, schema: FaceitData) -> int:
         return await self._repo.add_faceit_data(schema.model_dump())
 
 
 class FaceitAuthService:
-    """
-    Бизнес-логика OAuth-колбэка.
-    Раньше жила в роутере — теперь вынесена в сервис.
-    """
-
     def __init__(
         self,
         faceit_service: FaceitService,
@@ -91,10 +91,11 @@ class FaceitAuthService:
         self._encryption = encryption_service
         self._jwt = jwt_service
 
-    async def handle_callback(self, payload: FaceitCallbackPayload) -> str:
+    async def handle_callback(
+        self, payload: FaceitCallbackPayload
+    ) -> tuple[str, str]:
         """
-        Обрабатывает OAuth-колбэк и возвращает JWT access token.
-        Вся логика в одной транзакции (сессия передана в репозитории).
+        Возвращает (access_token, refresh_token) нашего приложения.
         """
         token_response = await self._faceit.get_token(
             code=payload.code,
@@ -109,6 +110,9 @@ class FaceitAuthService:
         if existing:
             logger.info("Existing user %s logged in.", existing.nickname)
             user_id = existing.user_id
+            # Обновляем Faceit refresh token в БД
+            encrypted_token = self._encryption.encrypt(token_response.refresh_token)
+            await self._faceit.update_faceit_auth_data(user_id, encrypted_token)
         else:
             user_id = await self._register_new_user(
                 player_guid=player_guid,
@@ -116,7 +120,9 @@ class FaceitAuthService:
                 refresh_token=token_response.refresh_token,
             )
 
-        return self._jwt.create_access_token(user_id=user_id)
+        access_token = self._jwt.create_access_token(user_id=user_id)
+        refresh_token = self._jwt.create_refresh_token(user_id=user_id)
+        return access_token, refresh_token
 
     async def _register_new_user(
         self,
@@ -124,7 +130,6 @@ class FaceitAuthService:
         nickname: str,
         refresh_token: str,
     ) -> int:
-        """Создание пользователя + профиля + faceit-данных в одной транзакции."""
         new_user = UserSchema(rating=0)
         user_id = await self._user_repo.add(new_user.model_dump(exclude_none=True))
 
@@ -132,7 +137,9 @@ class FaceitAuthService:
         await self._profile_repo.add(new_profile.model_dump(exclude_none=True))
 
         encrypted_token = self._encryption.encrypt(refresh_token)
-        auth_data = FaceitAuthData(user_id=user_id, encrypted_refresh_token=encrypted_token)
+        auth_data = FaceitAuthData(
+            user_id=user_id, encrypted_refresh_token=encrypted_token
+        )
         await self._faceit.add_faceit_auth_data(auth_data)
 
         stats, details = await asyncio.gather(
@@ -159,24 +166,31 @@ class FaceitAuthService:
         stats: FaceitPlayerStatsResponse | None,
         details: FaceitPlayerDetailsResponse | None,
     ) -> FaceitData:
-        """Парсинг и конвертация данных из API в схему для БД."""
         k_d = float(stats.k_d_ratio) if stats and stats.k_d_ratio else 0.0
-        adr = float(stats.avg_damage_per_round) if stats and stats.avg_damage_per_round else 0.0
+        k_r = float(stats.k_r_ratio) if stats and stats.k_r_ratio else 0.0
+        adr = (
+            float(stats.avg_damage_per_round)
+            if stats and stats.avg_damage_per_round
+            else 0.0
+        )
         matches = int(stats.matches) if stats and stats.matches else 0
-
         win_rate_str = (
             stats.win_rate_percentage.replace("%", "")
             if stats and stats.win_rate_percentage
             else "0"
         )
         win_rate = float(win_rate_str)
-
         headshots_str = (
             stats.average_headshots_percentage.replace("%", "")
             if stats and stats.average_headshots_percentage
             else "0"
         )
         headshots = int(headshots_str)
+        longest_win_streak = (
+            int(stats.longest_win_streak)
+            if stats and stats.longest_win_streak
+            else 0
+        )
 
         elo = details.games.cs2.faceit_elo if details and details.games.cs2 else 0
         lvl = details.games.cs2.skill_level if details and details.games.cs2 else 0
@@ -189,9 +203,11 @@ class FaceitAuthService:
             elo=elo,
             lvl=lvl,
             k_d_ratio=k_d,
+            k_r_ratio=k_r,
             avg_damage_per_round=adr,
             matches=matches,
             win_rate_percentage=win_rate,
             average_headshots_percentage=headshots,
+            longest_win_streak=longest_win_streak,
             avatar=avatar_url,
         )

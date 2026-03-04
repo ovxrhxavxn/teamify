@@ -4,20 +4,15 @@
  */
 export function isTokenExpired() {
   const token = localStorage.getItem('user_token')
-
   if (!token) {
     return true
   }
-
   try {
     const payloadBase64 = token.split('.')[1]
     const decodedJson = atob(payloadBase64)
     const decoded = JSON.parse(decodedJson)
-
     const exp = decoded.exp
-
     const now = Date.now() / 1000
-
     return exp < now
   } catch (error) {
     console.error('Ошибка декодирования токена:', error)
@@ -27,8 +22,6 @@ export function isTokenExpired() {
 
 /**
  * Возвращает CSS-класс цвета текста в зависимости от уровня Faceit.
- * @param {number} level - Уровень игрока (1-10).
- * @returns {string} Tailwind CSS класс.
  */
 export function getLevelColorClass(level) {
   if (!level) return ''
@@ -40,8 +33,6 @@ export function getLevelColorClass(level) {
 
 /**
  * Возвращает CSS-класс цвета текста в зависимости от рейтинга.
- * @param {number} rating - Рейтинг игрока (0-5).
- * @returns {string} Tailwind CSS класс.
  */
 export function getRatingColorClass(rating) {
   if (rating >= 4.0) return 'text-green-500'
@@ -51,9 +42,6 @@ export function getRatingColorClass(rating) {
 
 /**
  * Форматирует значение статистики: если 0, null или undefined — возвращает прочерк.
- * @param {number|string|null} value - Значение статистики.
- * @param {string} suffix - Суффикс (например '%').
- * @returns {string}
  */
 export function formatStat(value, suffix = '') {
   if (value === null || value === undefined || value === 0 || value === '0') {
@@ -64,7 +52,6 @@ export function formatStat(value, suffix = '') {
 
 /**
  * Цвет для K/D Ratio.
- * < 1.0 красный, 1.0–1.1 жёлтый, > 1.1 зелёный
  */
 export function getKDColorClass(value) {
   if (!value) return ''
@@ -74,8 +61,18 @@ export function getKDColorClass(value) {
 }
 
 /**
+ * Цвет для K/R Ratio.
+ * < 0.6 красный, 0.6–0.8 жёлтый, > 0.8 зелёный
+ */
+export function getKRColorClass(value) {
+  if (!value) return ''
+  if (value > 0.8) return 'text-green-600'
+  if (value >= 0.6) return 'text-yellow-500'
+  return 'text-red-500'
+}
+
+/**
  * Цвет для Win Rate %.
- * < 45% красный, 45–55% жёлтый, > 55% зелёный
  */
 export function getWinRateColorClass(value) {
   if (!value) return ''
@@ -86,7 +83,6 @@ export function getWinRateColorClass(value) {
 
 /**
  * Цвет для Headshot %.
- * < 40% красный, 40–55% жёлтый, > 55% зелёный
  */
 export function getHeadshotColorClass(value) {
   if (!value) return ''
@@ -97,7 +93,6 @@ export function getHeadshotColorClass(value) {
 
 /**
  * Цвет для AVG Damage per Round.
- * < 60 красный, 60–80 жёлтый, > 80 зелёный
  */
 export function getADRColorClass(value) {
   if (!value) return ''
@@ -108,11 +103,21 @@ export function getADRColorClass(value) {
 
 /**
  * Цвет для количества матчей.
- * < 100 красный, 100–500 жёлтый, > 500 зелёный
  */
 export function getMatchesColorClass(value) {
   if (!value) return ''
   if (value > 500) return 'text-green-600'
   if (value >= 100) return 'text-yellow-500'
+  return 'text-red-500'
+}
+
+/**
+ * Цвет для Win Streak.
+ * < 3 красный, 3–7 жёлтый, > 7 зелёный
+ */
+export function getWinStreakColorClass(value) {
+  if (!value) return ''
+  if (value > 7) return 'text-green-600'
+  if (value >= 3) return 'text-yellow-500'
   return 'text-red-500'
 }

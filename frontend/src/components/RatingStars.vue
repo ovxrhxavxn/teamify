@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue'
-import { getRatingColorClass } from '@/utils'
 
 const props = defineProps({
   rating: {
@@ -11,7 +10,6 @@ const props = defineProps({
 
 const hasRating = computed(() => props.rating > 0)
 const fullStars = computed(() => Math.round(props.rating))
-const ratingColorClass = computed(() => getRatingColorClass(props.rating))
 </script>
 
 <template>
@@ -27,11 +25,8 @@ const ratingColorClass = computed(() => getRatingColorClass(props.rating))
         />
       </div>
       <span class="text-gray-400 font-medium text-sm">
-        (
-        <span :class="ratingColorClass" class="font-bold">
-          {{ rating.toFixed(1) }}
-        </span>
-        )
+        (<span class="font-bold text-gray">{{ rating.toFixed(1) }}</span
+        >)
       </span>
     </template>
     <span v-else class="text-gray-400 font-medium text-sm">Нет оценок</span>

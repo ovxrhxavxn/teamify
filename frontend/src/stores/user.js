@@ -61,7 +61,13 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    logout() {
+    async logout() {
+      // Удаляем refresh cookie через бэкенд
+      try {
+        await api.post('/auth/logout')
+      } catch {
+        // Игнорируем ошибки при логауте
+      }
       this.profile = null
       localStorage.removeItem('user_token')
       if (router.currentRoute.value.name !== 'home') {

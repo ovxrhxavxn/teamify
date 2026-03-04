@@ -1,14 +1,12 @@
 from typing import Optional
-
 from datetime import date
-
 from pydantic import BaseModel, Field
 
 
 class Review(BaseModel):
     profile_id: int
     author_id: int
-    content:str
+    content: str
     rating: int
     created_at: date
 
@@ -27,11 +25,12 @@ class ReviewAuthor(BaseModel):
 
 class ReviewCreate(BaseModel):
     content: str
-    rating: int = Field(ge=1, le=5) # Рейтинг от 1 до 5
+    rating: int = Field(ge=1, le=5)
 
 
 class ReviewWithAuthor(BaseModel):
     id: int
+    author_id: int
     content: str
     rating: int
     created_at: date

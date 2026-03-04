@@ -97,7 +97,7 @@ async function loginWithFaceit() {
 
     <div class="w-full lg:w-[500px] bg-gray-50 p-12 flex flex-col justify-center relative">
       <div
-        class="bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative z-20 flex flex-col p-10"
+        class="bg-white border-2 border-black relative z-20 flex flex-col p-10 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all"
       >
         <div class="space-y-6 flex flex-col items-center">
           <div class="text-center">
