@@ -183,7 +183,7 @@ onUnmounted(() => {
               <div class="text-center">
                 <div class="text-2xl mb-1">⚡</div>
                 <div class="text-xs font-black uppercase tracking-widest">Не играй один</div>
-                <div class="text-[10px] text-gray-400 uppercase mt-1">Teamify © 2025</div>
+                <div class="text-[10px] text-gray-400 uppercase mt-1">Teamify © 2026</div>
               </div>
             </div>
           </div>
