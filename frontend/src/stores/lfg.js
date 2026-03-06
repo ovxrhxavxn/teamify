@@ -1,3 +1,4 @@
+// frontend/src/stores/lfg.js
 import { defineStore } from 'pinia'
 import api from '@/api'
 
@@ -26,6 +27,13 @@ export const useLfgStore = defineStore('lfg', {
     hasMorePlayers: true,
     currentPage: 0,
     currentFilters: {},
+
+    // --- Уведомления ---
+    notifications: [],
+    currentNotification: null,
+    showNotification: false,
+    _notificationTimer: null,
+    _notificationQueue: [],
   }),
 
   actions: {
@@ -44,7 +52,6 @@ export const useLfgStore = defineStore('lfg', {
       this.currentPage = 0
       this.hasMorePlayers = true
       this.currentFilters = filters
-
       try {
         const response = await api.get('/lfg/active', {
           params: { limit: PAGE_SIZE, offset: 0, ...this.currentFilters },
@@ -64,7 +71,6 @@ export const useLfgStore = defineStore('lfg', {
 
     async fetchMorePlayers() {
       if (this.isLoadingMore || !this.hasMorePlayers) return
-
       this.isLoadingMore = true
       try {
         const response = await api.get('/lfg/active', {
@@ -75,7 +81,6 @@ export const useLfgStore = defineStore('lfg', {
           },
           paramsSerializer: (params) => serializeParams(params).toString(),
         })
-
         if (response.data.length > 0) {
           this.activePlayers.push(...response.data)
           this.currentPage++
@@ -87,6 +92,16 @@ export const useLfgStore = defineStore('lfg', {
         console.error('Error loading more players:', error)
       } finally {
         this.isLoadingMore = false
+      }
+    },
+
+    async toggleSearchStatus(newStatus) {
+      this.isSearching = newStatus
+      try {
+        await api.post('/lfg/status', { is_active: newStatus })
+      } catch (error) {
+        console.error('Error toggling LFG status:', error)
+        this.isSearching = !newStatus
       }
     },
 
@@ -103,19 +118,7 @@ export const useLfgStore = defineStore('lfg', {
 
       this.socket.onmessage = (event) => {
         const message = JSON.parse(event.data)
-        if (message.type === 'status_update') {
-          const userProfile = message.user_profile
-          const userId = userProfile.profile.user_id
-
-          if (message.is_active) {
-            const exists = this.activePlayers.some((p) => p.profile.user_id === userId)
-            if (!exists) {
-              this.activePlayers.unshift(userProfile)
-            }
-          } else {
-            this.activePlayers = this.activePlayers.filter((p) => p.profile.user_id !== userId)
-          }
-        }
+        this._handleSocketMessage(message)
       }
 
       this.socket.onclose = () => {
@@ -128,16 +131,93 @@ export const useLfgStore = defineStore('lfg', {
       if (this.socket) {
         this.socket.close()
       }
+      this._clearNotificationTimer()
     },
 
-    async toggleSearchStatus(newStatus) {
-      this.isSearching = newStatus
-      try {
-        await api.post('/lfg/status', { is_active: newStatus })
-      } catch (error) {
-        console.error('Error toggling LFG status:', error)
-        this.isSearching = !newStatus
+    _handleSocketMessage(message) {
+      switch (message.type) {
+        case 'status_update':
+          this._handleStatusUpdate(message)
+          break
+
+        case 'lfg_response':
+          this._handleLfgResponse(message)
+          break
+
+        default:
+          console.warn('Unknown WS message type:', message.type)
       }
     },
+
+    _handleStatusUpdate(message) {
+      const userProfile = message.user_profile
+      const userId = userProfile.profile.user_id
+
+      if (message.is_active) {
+        const exists = this.activePlayers.some((p) => p.profile.user_id === userId)
+        if (!exists) {
+          this.activePlayers.unshift(userProfile)
+        }
+      } else {
+        this.activePlayers = this.activePlayers.filter((p) => p.profile.user_id !== userId)
+      }
+    },
+
+    _handleLfgResponse(message) {
+      // Сохраняем в историю
+      this.notifications.unshift({
+        ...message,
+        read: false,
+        receivedAt: Date.now(),
+      })
+
+      if (this.showNotification) {
+        this._notificationQueue.push(message)
+        return
+      }
+
+      this._showNotification(message)
+    },
+
+    _showNotification(notification) {
+      this.currentNotification = notification
+      this.showNotification = true
+
+      // Автоскрытие через 12 секунд
+      this._clearNotificationTimer()
+      this._notificationTimer = setTimeout(() => {
+        this.dismissNotification()
+      }, 12000)
+    },
+
+    dismissNotification() {
+      this.showNotification = false
+      this._clearNotificationTimer()
+
+      // Через 400мс (время анимации) показываем следующее из очереди
+      setTimeout(() => {
+        this.currentNotification = null
+
+        if (this._notificationQueue.length > 0) {
+          const next = this._notificationQueue.shift()
+          this._showNotification(next)
+        }
+      }, 400)
+    },
+
+    markAllNotificationsRead() {
+      this.notifications.forEach((n) => (n.read = true))
+    },
+
+    _clearNotificationTimer() {
+      if (this._notificationTimer) {
+        clearTimeout(this._notificationTimer)
+        this._notificationTimer = null
+      }
+    },
+  },
+
+  getters: {
+    unreadCount: (state) => state.notifications.filter((n) => !n.read).length,
   },
 })

@@ -11,6 +11,7 @@ from .profiles.router import router as profiles_router
 from .profiles.models import GameRole
 from .reviews.router import router as reviews_router
 from .lfg_statuses.router import router as lfg_router
+from .lfg_responses.router import router as lfg_responses_router
 from .database.setup import create_tables, async_session_maker
 
 
@@ -54,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-routers = [auth_router, faceit_router, profiles_router, reviews_router, lfg_router]
+routers = [auth_router, faceit_router, profiles_router, reviews_router, lfg_router, lfg_responses_router]
 for router in routers:
     app.include_router(router)
 

@@ -1,3 +1,4 @@
+<!-- frontend/src/pages/LFGLobby.vue -->
 <script setup>
 import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import Header from '@/components/Header.vue'
@@ -8,6 +9,7 @@ import { useDebounceFn } from '@vueuse/core'
 import api from '@/api'
 
 const lfgStore = useLfgStore()
+
 const eloRange = ref([0, 4500])
 const minRating = ref(0)
 const selectedRoles = ref([])
@@ -41,6 +43,7 @@ const debouncedSearch = useDebounceFn(() => {
 
 watch(filters, debouncedSearch, { deep: true })
 
+// Infinite scroll
 const observerTarget = ref(null)
 let observer = null
 
@@ -62,21 +65,26 @@ watch(observerTarget, (newEl) => {
 })
 
 onMounted(async () => {
+  // Загружаем роли для фильтров
   try {
     const response = await api.get('/profiles/roles')
     allRoles.value = response.data
   } catch (error) {
     console.error('Error loading roles:', error)
   }
+
+  // WebSocket уже подключён глобально в App.vue
+  // Здесь только загрузка данных страницы
   lfgStore.fetchMyStatus()
   lfgStore.fetchInitialPlayers()
-  lfgStore.connectWebSocket()
 })
 
 onUnmounted(() => {
-  lfgStore.disconnectWebSocket()
+  // Отключаем только observer, НЕ WebSocket
+  // WebSocket живёт глобально пока пользователь залогинен
   if (observer) {
     observer.disconnect()
+    observer = null
   }
 })
 </script>
@@ -84,6 +92,7 @@ onUnmounted(() => {
 <template>
   <Header />
 
+  <!-- Бегущая строка -->
   <div class="border-b-2 border-black bg-[#FF5500] overflow-hidden">
     <div class="flex animate-marquee">
       <span
@@ -100,6 +109,7 @@ onUnmounted(() => {
   <div class="min-h-screen bg-gray-100">
     <main class="max-w-[1600px] mx-auto px-6 py-8">
       <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Сайдбар -->
         <aside class="w-full lg:w-80 flex-shrink-0">
           <div class="sticky top-24 space-y-8">
             <!-- Поиск активен -->
@@ -189,6 +199,7 @@ onUnmounted(() => {
           </div>
         </aside>
 
+        <!-- Основной контент -->
         <div class="flex-1">
           <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-black uppercase flex items-center gap-2">
@@ -199,10 +210,12 @@ onUnmounted(() => {
             </h1>
           </div>
 
+          <!-- Загрузка -->
           <div v-if="lfgStore.isLoading" class="flex justify-center py-10">
             <Spinner text="Загрузка игроков..." />
           </div>
 
+          <!-- Список игроков -->
           <div v-else-if="lfgStore.activePlayers.length > 0">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
               <LFGCard
@@ -211,9 +224,11 @@ onUnmounted(() => {
                 :profileData="player"
               />
             </div>
+
             <div v-if="lfgStore.isLoadingMore" class="mt-12 flex justify-center">
               <Spinner size="sm" />
             </div>
+
             <div v-if="lfgStore.hasMorePlayers" ref="observerTarget" style="height: 50px" />
           </div>
 
