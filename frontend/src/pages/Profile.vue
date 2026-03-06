@@ -372,14 +372,14 @@ async function saveRoles() {
             <div class="flex justify-end gap-3 mt-4">
               <button
                 @click="cancelEditing"
-                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
+                class="px-2 py-2 text-sm uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
                 Отмена
               </button>
               <button
                 @click="saveProfile"
                 :disabled="userStore.isSaving"
-                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-2 py-2 text-sm uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ userStore.isSaving ? 'Сохранение...' : 'Сохранить' }}
               </button>
@@ -420,20 +420,20 @@ async function saveRoles() {
                 "
               >
                 <input type="checkbox" :value="role.id" v-model="selectedRoleIds" class="sr-only" />
-                <span class="font-bold uppercase text-sm">{{ role.name }}</span>
+                <span class="font-bold uppercase text-xs">{{ role.name }}</span>
               </label>
             </div>
             <div class="flex justify-end gap-3 mt-6">
               <button
                 @click="cancelEditingRoles"
-                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
+                class="px-2 py-2 text-sm uppercase border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
               >
                 Отмена
               </button>
               <button
                 @click="saveRoles"
                 :disabled="userStore.isSaving"
-                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-2 py-2 text-sm uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ userStore.isSaving ? 'Сохранение...' : 'Сохранить' }}
               </button>
@@ -446,7 +446,7 @@ async function saveRoles() {
                 <span
                   v-for="role in viewedProfile.profile.roles"
                   :key="role.id"
-                  class="bg-black text-white font-mono text-xs uppercase px-2 py-1"
+                  class="bg-black text-white font-mono text-sm uppercase px-2 py-1"
                 >
                   {{ role.name }}
                 </span>
@@ -534,7 +534,7 @@ async function saveRoles() {
           </div>
 
           <div v-if="!isOwnProfile" class="border-2 border-dashed border-gray-300 p-4 mb-8">
-            <h4 class="font-bold uppercase mb-3">Оставить отзыв</h4>
+            <h4 class="uppercase mb-3">Оставить отзыв</h4>
             <textarea
               v-model="newReviewContent"
               rows="3"
@@ -564,7 +564,7 @@ async function saveRoles() {
               <button
                 @click="submitReview"
                 :disabled="isSubmittingReview"
-                class="px-2 py-2 text-sm font-bold uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-2 py-2 text-sm uppercase border-2 border-black bg-black !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ isSubmittingReview ? 'Отправка...' : 'Отправить' }}
               </button>
