@@ -431,7 +431,7 @@ async function saveRoles() {
           >
             <div class="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
               <h3 class="font-black text-lg uppercase flex items-center gap-2">
-                <img src="/img/crosshair.svg" width="16" height="16" />
+                <img src="/img/people.svg" width="16" height="16" />
                 Роли
               </h3>
               <button
@@ -581,14 +581,14 @@ async function saveRoles() {
 
           <!-- Reviews -->
           <section
-            class="bg-white border-2 border-black p-6 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
+            class="bg-white border-2 border-black p-4 sm:p-6 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px] transition-all"
           >
             <div class="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
-              <h3 class="font-black text-lg uppercase flex items-center gap-2">
-                <img src="/img/people.svg" width="16" height="16" />
+              <h3 class="font-black text-base sm:text-lg uppercase flex items-center gap-2">
+                <img src="/img/map.svg" width="16" height="16" />
                 Отзывы
               </h3>
-              <span class="bg-black text-white px-2 py-0.5 text-sm font-bold">
+              <span class="bg-black text-white px-2 py-0.5 text-xs sm:text-sm font-bold">
                 {{ viewedProfile.total_reviews }}
               </span>
             </div>
@@ -596,18 +596,19 @@ async function saveRoles() {
             <!-- Форма отзыва -->
             <div
               v-if="!isOwnProfile"
-              class="border-2 border-dashed border-gray-300 p-5 mb-6 bg-gray-50"
+              class="border-2 border-dashed border-gray-300 p-3 sm:p-5 mb-4 sm:mb-6 bg-gray-50"
             >
-              <h4 class="font-black uppercase text-sm mb-3">Оставить отзыв</h4>
+              <h4 class="font-black uppercase text-xs sm:text-sm mb-3">Оставить отзыв</h4>
               <textarea
                 v-model="newReviewContent"
                 rows="3"
-                class="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow resize-none text-sm bg-white"
+                class="w-full p-2 sm:p-3 border-2 border-black focus:outline-none focus:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-shadow resize-none text-sm bg-white"
                 placeholder="Напиши отзыв..."
               />
-              <div class="flex justify-between items-center mt-3">
+              <!-- Оценка и кнопка — стакаются на мобилке -->
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-3">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-bold">Оценка:</span>
+                  <span class="text-xs sm:text-sm font-bold">Оценка:</span>
                   <div class="flex gap-1" @mouseleave="hoverRating = 0">
                     <img
                       v-for="star in 5"
@@ -628,22 +629,22 @@ async function saveRoles() {
                 <button
                   @click="submitReview"
                   :disabled="isSubmittingReview"
-                  class="px-4 py-2 text-sm uppercase font-bold border-2 border-black bg-[#FF5500] !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
+                  class="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs sm:text-sm uppercase font-bold border-2 border-black bg-[#FF5500] !text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-50"
                 >
                   {{ isSubmittingReview ? 'Отправка...' : 'Отправить' }}
                 </button>
               </div>
             </div>
 
-            <div v-if="reviewsLoading" class="flex justify-center py-10">
+            <div v-if="reviewsLoading" class="flex justify-center py-6 sm:py-10">
               <Spinner size="sm" text="Загрузка отзывов..." />
             </div>
             <div v-else-if="reviews.length > 0">
               <Review v-for="review in reviews" :key="review.id" :review="review" />
             </div>
-            <div v-else class="text-center py-8">
-              <div class="text-4xl mb-2">💬</div>
-              <p class="text-gray-400 italic text-sm">
+            <div v-else class="text-center py-6 sm:py-8">
+              <div class="text-3xl sm:text-4xl mb-2">💬</div>
+              <p class="text-gray-400 italic text-xs sm:text-sm">
                 {{ isOwnProfile ? 'Пока нет отзывов' : 'Расскажи первым, как он слил тебе игру' }}
               </p>
             </div>
