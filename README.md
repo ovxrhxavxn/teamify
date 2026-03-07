@@ -281,5 +281,5 @@ npm run dev
 <div align="center">
   <sub>Сделано с 🔥 для CS2 комьюнити</sub>
   <br />
-  <sub>Teamify © 2025</sub>
+  <sub>Teamify © 2026</sub>
 </div>
