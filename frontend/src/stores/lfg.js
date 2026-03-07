@@ -48,16 +48,17 @@ export const useLfgStore = defineStore('lfg', {
 
     async fetchInitialPlayers(filters = {}) {
       this.isLoading = true
-      this.activePlayers = []
+      // НЕ обнуляем activePlayers сразу — ждём ответа
       this.currentPage = 0
       this.hasMorePlayers = true
       this.currentFilters = filters
+
       try {
         const response = await api.get('/lfg/active', {
           params: { limit: PAGE_SIZE, offset: 0, ...this.currentFilters },
           paramsSerializer: (params) => serializeParams(params).toString(),
         })
-        this.activePlayers = response.data
+        this.activePlayers = response.data // Перезаписываем только когда есть данные
         this.currentPage = 1
         if (response.data.length < PAGE_SIZE) {
           this.hasMorePlayers = false
@@ -82,7 +83,10 @@ export const useLfgStore = defineStore('lfg', {
           paramsSerializer: (params) => serializeParams(params).toString(),
         })
         if (response.data.length > 0) {
-          this.activePlayers.push(...response.data)
+          // Фильтруем дубликаты
+          const existingIds = new Set(this.activePlayers.map((p) => p.profile.user_id))
+          const newPlayers = response.data.filter((p) => !existingIds.has(p.profile.user_id))
+          this.activePlayers.push(...newPlayers)
           this.currentPage++
         }
         if (response.data.length < PAGE_SIZE) {
@@ -154,10 +158,9 @@ export const useLfgStore = defineStore('lfg', {
       const userId = userProfile.profile.user_id
 
       if (message.is_active) {
-        const exists = this.activePlayers.some((p) => p.profile.user_id === userId)
-        if (!exists) {
-          this.activePlayers.unshift(userProfile)
-        }
+        // Удаляем старую версию (если есть) и добавляем новую
+        this.activePlayers = this.activePlayers.filter((p) => p.profile.user_id !== userId)
+        this.activePlayers.unshift(userProfile)
       } else {
         this.activePlayers = this.activePlayers.filter((p) => p.profile.user_id !== userId)
       }

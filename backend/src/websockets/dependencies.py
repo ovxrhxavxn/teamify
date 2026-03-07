@@ -11,14 +11,20 @@ class ConnectionManager:
         self.active_connections[user_id] = websocket
 
     def disconnect(self, user_id: int):
-        if user_id in self.active_connections:
-            del self.active_connections[user_id]
+        self.active_connections.pop(user_id, None)
 
     async def broadcast(self, message: dict, sender_id: int):
-        # Отправляем сообщение всем, кроме отправителя
+        disconnected = []
         for user_id, connection in self.active_connections.items():
             if user_id != sender_id:
-                await connection.send_json(message)
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    disconnected.append(user_id)
+        # Чистим мёртвые соединения
+        for uid in disconnected:
+            self.active_connections.pop(uid, None)
+
 
 
 manager = ConnectionManager()
