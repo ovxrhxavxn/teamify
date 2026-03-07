@@ -32,7 +32,7 @@ const router = createRouter({
       component: AuthCallback,
     },
     {
-      path: '/lfg',
+      path: '/lobby',
       name: 'lfg-lobby',
       component: LFGLobby,
       meta: { requiresAuth: true },
