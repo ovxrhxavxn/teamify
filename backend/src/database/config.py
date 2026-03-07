@@ -4,7 +4,7 @@ from ..config import BaseConfig
 class DBConfig(BaseConfig):
     host: str
     port: int
-    db_name: str
+    name: str
     user: str
     password: str
 
