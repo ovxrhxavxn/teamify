@@ -111,29 +111,75 @@ export const useLfgStore = defineStore('lfg', {
 
     connectWebSocket() {
       const token = localStorage.getItem('user_token')
-      if (!token || this.socket) return
+      if (!token) return
+
+      // Закрываем старый сокет, если есть
+      if (this.socket) {
+        this.socket.close()
+        this.socket = null
+      }
 
       const wsBase = import.meta.env.VITE_WS_BASE_URL || 'wss://teamify.pro/api'
-      this.socket = new WebSocket(`${wsBase}/lfg/ws?token=${token}`)
+      const url = `${wsBase}/lfg/ws?token=${token}`
+
+      console.log('WebSocket connecting to:', url)
+      this.socket = new WebSocket(url)
 
       this.socket.onopen = () => {
         console.log('WebSocket connected.')
+        this._reconnectAttempts = 0
       }
 
       this.socket.onmessage = (event) => {
-        const message = JSON.parse(event.data)
-        this._handleSocketMessage(message)
+        if (event.data === 'ping') {
+          this.socket.send('pong')
+          return
+        }
+
+        try {
+          const message = JSON.parse(event.data)
+          this._handleSocketMessage(message)
+        } catch (e) {
+          console.error('Failed to parse WS message:', e)
+        }
       }
 
-      this.socket.onclose = () => {
-        console.log('WebSocket closed.')
+      // Клиентский keepalive
+      this._pingInterval = setInterval(() => {
+        if (this.socket?.readyState === WebSocket.OPEN) {
+          this.socket.send('ping')
+        }
+      }, 30000)
+
+      this.socket.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason)
         this.socket = null
+
+        // Реконнект только если не было явного отключения
+        if (!this._intentionalDisconnect) {
+          this._scheduleReconnect()
+        }
       }
+
+      this.socket.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
+
+      this._intentionalDisconnect = false
     },
 
     disconnectWebSocket() {
+      this._intentionalDisconnect = true
+      if (this._reconnectTimer) {
+        clearTimeout(this._reconnectTimer)
+      }
+      if (this._pingInterval) {
+        clearInterval(this._pingInterval)
+        this._pingInterval = null
+      }
       if (this.socket) {
         this.socket.close()
+        this.socket = null
       }
       this._clearNotificationTimer()
     },
@@ -217,6 +263,26 @@ export const useLfgStore = defineStore('lfg', {
         clearTimeout(this._notificationTimer)
         this._notificationTimer = null
       }
+    },
+
+    _scheduleReconnect() {
+      if (!this._reconnectAttempts) this._reconnectAttempts = 0
+      if (this._reconnectAttempts >= 5) {
+        console.warn('Max reconnect attempts reached')
+        return
+      }
+
+      const delay = Math.min(1000 * Math.pow(2, this._reconnectAttempts), 30000)
+      this._reconnectAttempts++
+
+      console.log(`Reconnecting in ${delay}ms (attempt ${this._reconnectAttempts})`)
+
+      this._reconnectTimer = setTimeout(() => {
+        const token = localStorage.getItem('user_token')
+        if (token) {
+          this.connectWebSocket()
+        }
+      }, delay)
     },
   },
 

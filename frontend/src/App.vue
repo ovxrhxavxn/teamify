@@ -1,4 +1,3 @@
-<!-- frontend/src/App.vue -->
 <script setup>
 import { onMounted, watch } from 'vue'
 import { useUserStore } from '@/stores/user'
@@ -16,20 +15,18 @@ const theme = {
 
 onMounted(async () => {
   await userStore.fetchUser()
-  if (userStore.isAuthenticated) {
-    lfgStore.connectWebSocket()
-  }
 })
 
 watch(
   () => userStore.isAuthenticated,
-  (isAuth) => {
+  (isAuth, wasAuth) => {
     if (isAuth && !lfgStore.socket) {
       lfgStore.connectWebSocket()
-    } else if (!isAuth) {
+    } else if (!isAuth && wasAuth) {
       lfgStore.disconnectWebSocket()
     }
   },
+  { immediate: true },
 )
 </script>
 

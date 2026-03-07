@@ -1,4 +1,5 @@
 from typing import Annotated, List, Optional
+import asyncio
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -114,6 +115,19 @@ async def websocket_endpoint(
     await manager.connect(websocket, user_id)
     try:
         while True:
-            await websocket.receive_text()
+            try:
+                data = await asyncio.wait_for(
+                    websocket.receive_text(),
+                    timeout=60.0
+                )
+                if data == "ping":
+                    await websocket.send_text("pong")
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_text("ping")
+                except Exception:
+                    break
     except WebSocketDisconnect:
+        pass
+    finally:
         manager.disconnect(user_id)
