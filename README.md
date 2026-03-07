@@ -53,7 +53,7 @@
 ```
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────┐
 │                  │  REST   │                  │         │              │
-│   Vue.js 3 SPA  │◄───────►│  FastAPI Backend  │◄───────►│  PostgreSQL  │
+│   Vue.js 3 SPA   │◄───────►│  FastAPI Backend │◄───────►│  PostgreSQL  │
 │   + Pinia + WS   │   API   │  (async/await)   │  asyncpg│              │
 │                  │         │                  │         │              │
 └──────────────────┘         └────────┬─────────┘         └──────────────┘
