@@ -7,7 +7,8 @@ def main():
 
         app="src.app:app",
         host="0.0.0.0",
-        workers=4,
+        workers=1,
+        loop="uvloop"
     )
 if __name__ == "__main__":
     main()
