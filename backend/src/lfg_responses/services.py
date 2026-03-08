@@ -45,6 +45,7 @@ class LFGResponseService:
             faceit_profile_url = (
                 f"https://www.faceit.com/en/players/{responder_faceit.nickname}"
             )
+
             notification = ResponseNotification(
                 type="lfg_response",
                 responder_nickname=responder_faceit.nickname,
@@ -54,16 +55,10 @@ class LFGResponseService:
                 responder_lvl=responder_faceit.lvl,
                 response_id=response.id,
             )
-            await self._send_notification_to_user(
+
+            # Используем обновлённый manager
+            await manager.send_to_user(
                 target_user_id, notification.model_dump()
             )
 
         return {"status": "ok", "response_id": response.id}
-
-    async def _send_notification_to_user(
-        self, user_id: int, message: dict
-    ):
-        if user_id in manager.active_connections:
-            connection = manager.active_connections[user_id]
-            await connection.send_json(message)
-
