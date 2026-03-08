@@ -1,7 +1,16 @@
-from typing import Annotated, List, Optional
 import asyncio
+import logging
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, Query, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    WebSocket,
+    WebSocketDisconnect,
+    Query,
+    HTTPException,
+    status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database.setup import get_async_session
@@ -21,7 +30,29 @@ from ..profiles.dependencies import get_profile_service
 from ..faceit.services import FaceitService
 from ..faceit.dependencies import get_faceit_service
 
+
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/lfg", tags=["LFG"])
+
+
+async def _build_player_broadcast_data(
+    user_id: int,
+    rating: float,
+    profile_service: ProfileService,
+    faceit_service: FaceitService,
+) -> dict | None:
+    """Собирает полные данные игрока для отправки через WS."""
+    profile = await profile_service.get_by_user_id(user_id)
+    faceit_data = await faceit_service.get_faceit_data_by_user_id(user_id)
+
+    if not profile or not faceit_data:
+        return None
+
+    return {
+        "profile": profile.model_dump(mode="json"),
+        "faceit_data": faceit_data.model_dump(mode="json"),
+        "rating": rating,
+    }
 
 
 async def get_current_user_from_token(
@@ -89,20 +120,25 @@ async def set_lfg_status(
     await lfg_service.set_status(current_user.id, status_update.is_active)
     await session.commit()
 
-    profile = await profile_service.get_by_user_id(current_user.id)
-    faceit_data = await faceit_service.get_faceit_data_by_user_id(current_user.id)
+    if status_update.is_active:
+        player_data = await _build_player_broadcast_data(
+            user_id=current_user.id,
+            rating=current_user.rating,
+            profile_service=profile_service,
+            faceit_service=faceit_service,
+        )
+        message = {
+            "type": "player_joined",
+            "player": player_data,
+        }
+    else:
+        message = {
+            "type": "player_left",
+            "user_id": current_user.id,
+        }
 
-    message = {
-        "type": "status_update",
-        "is_active": status_update.is_active,
-        "user_profile": {
-            "profile": profile.model_dump(mode="json"),
-            "faceit_data": faceit_data.model_dump(mode="json"),
-            "rating": current_user.rating,
-        },
-    }
+    await manager.broadcast(message, exclude_user_id=current_user.id)
 
-    await manager.broadcast(message, sender_id=current_user.id)
     return {"status": "ok", "is_active": status_update.is_active}
 
 
@@ -110,24 +146,48 @@ async def set_lfg_status(
 async def websocket_endpoint(
     websocket: WebSocket,
     current_user: Annotated[UserFromDB, Depends(get_current_user_from_token)],
+    lfg_service: Annotated[LFGStatusService, Depends(get_lfg_status_service)],
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    profile_service: Annotated[ProfileService, Depends(get_profile_service)],
+    faceit_service: Annotated[FaceitService, Depends(get_faceit_service)],
 ):
     user_id = current_user.id
-    await manager.connect(websocket, user_id)
+    conn = await manager.connect(websocket, user_id)
+
     try:
         while True:
             try:
                 data = await asyncio.wait_for(
                     websocket.receive_text(),
-                    timeout=60.0
+                    timeout=60.0,
                 )
                 if data == "ping":
                     await websocket.send_text("pong")
             except asyncio.TimeoutError:
+                # Server-side keepalive
                 try:
                     await websocket.send_text("ping")
                 except Exception:
                     break
+
     except WebSocketDisconnect:
-        pass
+        logger.info("User %s WebSocket disconnected.", user_id)
+    except Exception as e:
+        logger.error("WebSocket error for user %s: %s", user_id, e)
     finally:
         manager.disconnect(user_id)
+
+        try:
+            lfg_status = await lfg_service._repo.get_or_create(user_id)
+            if lfg_status.is_active:
+                await lfg_service.set_status(user_id, False)
+                await session.commit()
+
+                leave_message = {
+                    "type": "player_left",
+                    "user_id": user_id,
+                }
+                await manager.broadcast(leave_message, exclude_user_id=user_id)
+                logger.info("Auto-disabled LFG for disconnected user %s", user_id)
+        except Exception as e:
+            logger.error("Error auto-disabling LFG for user %s: %s", user_id, e)

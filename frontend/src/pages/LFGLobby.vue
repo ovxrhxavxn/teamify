@@ -1,14 +1,15 @@
-<!-- frontend/src/pages/LFGLobby.vue -->
 <script setup>
 import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import Header from '@/components/Header.vue'
 import LFGCard from '@/components/LFGCard.vue'
 import Spinner from '@/components/Spinner.vue'
 import { useLfgStore } from '@/stores/lfg'
+import { useUserStore } from '@/stores/user'
 import { useDebounceFn } from '@vueuse/core'
 import api from '@/api'
 
 const lfgStore = useLfgStore()
+const userStore = useUserStore()
 
 const eloRange = ref([0, 4500])
 const minRating = ref(0)
@@ -22,7 +23,6 @@ const tips = [
   'Оставляй отзывы тиммейтам — это помогает сообществу.',
   'Фильтруй по ролям, чтобы найти идеальный состав.',
 ]
-
 const randomTip = ref(tips[Math.floor(Math.random() * tips.length)])
 
 const filters = computed(() => {
@@ -65,7 +65,6 @@ watch(observerTarget, (newEl) => {
 })
 
 onMounted(async () => {
-  // Загружаем роли для фильтров
   try {
     const response = await api.get('/profiles/roles')
     allRoles.value = response.data
@@ -73,15 +72,11 @@ onMounted(async () => {
     console.error('Error loading roles:', error)
   }
 
-  // WebSocket уже подключён глобально в App.vue
-  // Здесь только загрузка данных страницы
   lfgStore.fetchMyStatus()
   lfgStore.fetchInitialPlayers()
 })
 
 onUnmounted(() => {
-  // Отключаем только observer, НЕ WebSocket
-  // WebSocket живёт глобально пока пользователь залогинен
   if (observer) {
     observer.disconnect()
     observer = null
@@ -91,7 +86,6 @@ onUnmounted(() => {
 
 <template>
   <Header />
-
   <!-- Бегущая строка -->
   <div class="border-b-2 border-black bg-[#FF5500] overflow-hidden">
     <div class="flex animate-marquee">
@@ -217,18 +211,21 @@ onUnmounted(() => {
 
           <!-- Список игроков -->
           <div v-else-if="lfgStore.activePlayers.length > 0">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            <TransitionGroup
+              name="player-list"
+              tag="div"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6"
+            >
               <LFGCard
                 v-for="player in lfgStore.activePlayers"
-                :key="player.profile.id"
+                :key="player.profile.user_id"
                 :profileData="player"
               />
-            </div>
+            </TransitionGroup>
 
             <div v-if="lfgStore.isLoadingMore" class="mt-12 flex justify-center">
               <Spinner size="sm" />
             </div>
-
             <div v-if="lfgStore.hasMorePlayers" ref="observerTarget" style="height: 50px" />
           </div>
 
@@ -247,3 +244,27 @@ onUnmounted(() => {
     </main>
   </div>
 </template>
+
+<style scoped>
+.player-list-enter-active {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.player-list-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.player-list-enter-from {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+}
+
+.player-list-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.player-list-move {
+  transition: transform 0.4s ease;
+}
+</style>
