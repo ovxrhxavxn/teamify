@@ -74,6 +74,11 @@ class FaceitService:
 
     async def add_faceit_data(self, schema: FaceitData) -> int:
         return await self._repo.add_faceit_data(schema.model_dump())
+    
+    async def update_faceit_data(self, user_id: int, schema: FaceitData) -> None:
+        data = schema.model_dump()
+        data.pop("user_id", None)
+        await self._repo.update_faceit_data(user_id, data)
 
 
 class FaceitAuthService:
@@ -110,15 +115,30 @@ class FaceitAuthService:
         if existing:
             logger.info("Existing user %s logged in.", existing.nickname)
             user_id = existing.user_id
-            # Обновляем Faceit refresh token в БД
+
             encrypted_token = self._encryption.encrypt(token_response.refresh_token)
             await self._faceit.update_faceit_auth_data(user_id, encrypted_token)
+
+            stats, details = await asyncio.gather(
+                self._faceit.get_player_stats(player_guid),
+                self._faceit.get_player_details(player_guid),
+            )
+
+            faceit_data = self._build_faceit_data(
+                user_id=user_id,
+                player_guid=player_guid,
+                nickname=user_info.nickname,
+                stats=stats,
+                details=details,
+            )
+            await self._faceit.update_faceit_data(user_id, faceit_data)
         else:
             user_id = await self._register_new_user(
                 player_guid=player_guid,
                 nickname=user_info.nickname,
                 refresh_token=token_response.refresh_token,
             )
+
 
         access_token = self._jwt.create_access_token(user_id=user_id)
         refresh_token = self._jwt.create_refresh_token(user_id=user_id)
