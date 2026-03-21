@@ -126,3 +126,12 @@ class FaceitRepository(BaseRepository):
         stmt = insert(FaceitData).values(**schema).returning(FaceitData.id)
         result = await self._session.execute(stmt)
         return result.scalar_one()
+
+    async def update_faceit_data(self, user_id: int, schema: dict) -> None:
+        stmt = (
+            update(FaceitData)
+            .where(FaceitData.user_id == user_id)
+            .values(**schema)
+        )
+        await self._session.execute(stmt)
+
